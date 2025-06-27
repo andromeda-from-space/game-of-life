@@ -45,10 +45,27 @@ SDLWindowWrapper::~SDLWindowWrapper(){
 
 //---------- UTILITIES ----------
 void SDLWindowWrapper::saveImg(std::string path){
-    // Get the window surface
-    SDL_Surface* currSurface = SDL_GetWindowSurface(window);
+    // Render what's in the renderer to a temporary surface
+    SDL_Surface* saveSurface = SDL_CreateRGBSurface(0, screenWidth, screenHeight, 32, 0, 0, 0, 0);
+    SDL_RenderReadPixels(renderer, NULL, saveSurface->format->format, saveSurface->pixels, saveSurface->pitch);
+
     // Save
-    IMG_SavePNG(currSurface, path.c_str());
+    IMG_SavePNG(saveSurface, path.c_str());
+
+    // Clean up
+    SDL_FreeSurface(saveSurface);
+}
+
+SDL_Renderer* SDLWindowWrapper::getRenderer(){
+    return renderer;
+}
+
+int SDLWindowWrapper::getWidth(){
+    return screenWidth;
+}
+
+int SDLWindowWrapper::getHeight(){
+    return screenHeight;
 }
 
 //---------- PRIVATE UTILITIES ----------

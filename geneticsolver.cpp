@@ -38,8 +38,8 @@ GeneticAlgorithm& GeneticAlgorithm::operator=(const GeneticAlgorithm& otherGA) {
                 population[i][j] = otherGA.population[i][j];
             }
         }
-
     }
+    return *this;
 }
 
 GeneticAlgorithm::~GeneticAlgorithm(){

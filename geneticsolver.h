@@ -25,7 +25,6 @@ class GeneticAlgorithm{
         void initPop();
         // Evaluates the fitness of a member of the population
         virtual double fitness(int member) = 0;
-        // Alters
         // Train the algorithm for the specified number of generations
         void train(int numGenerations);
         // Evaluate the fitness of the population
@@ -60,23 +59,5 @@ class GeneticAlgorithm{
         // Deletes the data in the population array
         void clearPop();
 };
-
-// Possible actions for solving the maze
-const char MAZESOLVER_UP = 'U';
-const char MAZESOLVER_DOWN = 'D';
-const char MAZESOLVER_LEFT = 'L';
-const char MAZESOVLER_RIGHT = 'R';
-
-// Number of possible states for the maze solver problem
-const int MAZESOLVER_NUM_STATES = 0;
-
-/*
-class MazeSolverGA : public GeneticAlgorithm {
-    public:
-        MazeSolver();
-    private:
-        int fitness();
-};
-*/
 
 #endif

@@ -29,8 +29,14 @@ class SDLWindowWrapper {
         ~SDLWindowWrapper();
 
         //---------- UTILITIES ----------
-        // Saves what's currently in the window
+        // Saves what's currently in the renderer
+        // Note: must be called before SDL_RenderPresent otherwise renderer buffer will clear and there won't be any visual data to save
         void saveImg(std::string path);
+
+        //---------- ACCESSORS ----------
+        SDL_Renderer* getRenderer();
+        int getWidth();
+        int getHeight();
     private:
         // Width of the screen
         int screenWidth;
@@ -82,6 +88,8 @@ class SDLTextureWrapper {
         //---------- ACCESSORS ----------
         int getWidth();
         int getHeight();
+        
+        //---------- MUTATORS ----------
     private:
         // Texture pointer
         SDL_Texture* texture;

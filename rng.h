@@ -5,31 +5,24 @@
 #include <ctime>
 #include <limits>
 
-namespace rng {
+namespace rng{
     // Double distribution between 0.0 and 1.0
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    extern std::uniform_real_distribution<double> dist;
 
     // Mersenne Twister for the technique to generate the numbers
-    std::mt19937 generator; 
+    extern std::mt19937 generator; 
 
     // Flag for the rng being seeded
-    bool seeded = false;
+    extern bool seeded;
 
     // Seed the rng
-    void seedRNG(){
-        generator.seed(std::random_device{}());
-        seeded = true;
-    }
+    void seedRNG();
 
     // Generate a random number between min and max inclusive
-    double genRandDouble(double min, double max){
-        return dist(generator) * (max - min) + min;
-    }
+    double genRandDouble(double min, double max);
 
     // Generate a random number between min and max inclusive
-    int genRandInt(int min, int max){
-        return ((int) (dist(generator) * INT32_MAX)) % (max - min + 1) + min;
-    }
+    int genRandInt(int min = 0.0, int max = 1.0);
 }
 
 #endif

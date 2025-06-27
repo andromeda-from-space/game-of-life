@@ -1,3 +1,9 @@
 # Ignore compiled files
 *.o
 game-of-life
+# ignore the frames and video
+*.png
+*.mp4
+video
+# ignore vs code files
+.vscode
