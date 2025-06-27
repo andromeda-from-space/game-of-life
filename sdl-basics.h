@@ -10,6 +10,7 @@
 // TODO - deep copying
 // TODO - shared pointers
 // TODO - more sophisticated text handling
+// TODO - create initialization flags to make sure the program doesn't try to double initialize the SDL subsystems, semaphore style model?
 
 // Default Screen Sizes
 const int DEFAULT_SCREEN_WIDTH = 640;
