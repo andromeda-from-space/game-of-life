@@ -127,6 +127,68 @@ void CellularAutomata1D::step(bool* curr, int domainSize){
     curr = next;
 }
 
+//---------- MUTATORS ----------
+void CellularAutomata1D::setRules(bool* newRules){
+    for(int i = 0; i < 8; i++){
+        rules[i] = newRules[i];
+    }
+}
+
+//---------------------------------------- MajoritySolverGA ----------------------------------------
+//---------- GENETIC ALGORITHM FUNCTIONS ----------
+double MajoritySolverGA::fitness(int member){
+    // Translate the member string into rules for the Cellular Automata 1D
+    bool memberRules[8];
+    for(int i = 0; i < 8; i++){
+        if(population[member][i] == '0'){
+            memberRules[i] = false;
+        } else {
+            memberRules[i] = true;
+        }
+    }
+    currAutomata.setRules(memberRules);
+
+    // Randomly generate bit strings and evaluate
+    double fitness = (double) numFitnessTests;
+    // The bit string to test the cellular automata on
+    bool start[domainSize];
+    // The total count of true in the domain
+    int total;
+    // The value for the majority (1 or 0)
+    int majority;
+    // The result of running the majority algorithm
+    int eval;
+
+    // Attempt to classify the random starting points
+    for(int i = 0; i < numFitnessTests; i++){
+        // Generate a random starting point
+        total = 0;
+        for(int j = 0; j < domainSize; j++){
+            if(rng::genRandDouble(0.0, 1.0) > 0.5){
+                start[j] = true;
+                total++;
+            } else {
+                start[j] = false;
+            }
+        }
+        if(total > domainSize / 2){
+            majority = 1;
+        } else {
+            majority = 0;
+        }
+
+        // Attempt to find the majority
+        eval = currAutomata.majority(start, domainSize, maxSteps);
+        if(eval < 0){
+            fitness -= 1.;
+        } else if(eval == majority){
+            fitness += 1.;
+        }
+    }
+
+    return fitness;
+}
+
 //---------------------------------------- CellularAutomata1DGeneral ----------------------------------------
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
 CellularAutomata1DGeneral::CellularAutomata1DGeneral() {
