@@ -6,15 +6,11 @@
 CellularAutomata1D::CellularAutomata1D(){
     // Randomly select rules based on coin flip
     for(int i = 0; i < 8; i++){
-        if(rng::genRandDouble(0.0, 1.0) > 0.5){
-            rules[i] = true;
-        } else {
-            rules[i] = false;
-        }
+        (rng::genRandDouble(0.0, 1.0) > 0.5) ? rules[i] = CA_TRUE : rules[i] = CA_FALSE;
     }
 }
 
-CellularAutomata1D::CellularAutomata1D(bool* rules){
+CellularAutomata1D::CellularAutomata1D(char* rules){
     for(int i = 0; i < 8; i++){
         this->rules[i] = rules[i];
     }
@@ -110,17 +106,17 @@ void CellularAutomata1D::step(bool* curr, int domainSize){
 
     // Left side
     ruleVal = curr[domainSize - 1] * 4 + curr[0] * 2 + curr[1];
-    next[0] = rules[ruleVal];
+    next[0] = rules[ruleVal] == CA_TRUE;
     
     // Internals
     for(int i = 1; i < domainSize - 1; i++){
         ruleVal = curr[i - 1] * 4 + curr[i] * 2 + curr[i + 1];
-        next[i] = rules[ruleVal];
+        next[i] = rules[ruleVal] == CA_TRUE;
     }
 
     // Right side
     ruleVal = curr[domainSize - 2] * 4 + curr[domainSize - 1] * 2 + curr[0];
-    next[domainSize - 1] = rules[ruleVal];
+    next[domainSize - 1] = rules[ruleVal] == CA_TRUE;
 
     // Pointer shuffle
     delete[](curr);
@@ -128,25 +124,25 @@ void CellularAutomata1D::step(bool* curr, int domainSize){
 }
 
 //---------- MUTATORS ----------
-void CellularAutomata1D::setRules(bool* newRules){
+void CellularAutomata1D::setRules(char* newRules){
     for(int i = 0; i < 8; i++){
         rules[i] = newRules[i];
     }
+}
+
+void snapShot(SDLWindowWrapper & window, bool* start, int domainSize, int numSteps){
+    // TODO
+}
+
+void snapShot(SDLWindowWrapper & window, int rows, int cols, int results){
+    // TODO
 }
 
 //---------------------------------------- MajoritySolverGA ----------------------------------------
 //---------- GENETIC ALGORITHM FUNCTIONS ----------
 double MajoritySolverGA::fitness(int member){
     // Translate the member string into rules for the Cellular Automata 1D
-    bool memberRules[8];
-    for(int i = 0; i < 8; i++){
-        if(population[member][i] == '0'){
-            memberRules[i] = false;
-        } else {
-            memberRules[i] = true;
-        }
-    }
-    currAutomata.setRules(memberRules);
+    currAutomata.setRules(population[member]);
 
     // Randomly generate bit strings and evaluate
     double fitness = (double) numFitnessTests;
@@ -201,12 +197,8 @@ CellularAutomata1DGeneral::CellularAutomata1DGeneral() {
     }
 
     // Randomly select rules based on coin flip
-    for(int i = 0; i < 8; i++){
-        if(rng::genRandDouble(0.0, 1.0) > 0.5){
-            rules[i] = true;
-        } else {
-            rules[i] = false;
-        }
+    for(int i = 0; i < ruleCount; i++){
+        (rng::genRandDouble(0.0, 1.0) > 0.5) ? rules[i] = CA_TRUE : rules[i] = CA_FALSE;
     }
 }
 

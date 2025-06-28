@@ -10,7 +10,6 @@
 // TODO - deep copying
 // TODO - shared pointers
 // TODO - more sophisticated text handling
-// TODO - create initialization flags to make sure the program doesn't try to double initialize the SDL subsystems, semaphore style model?
 
 // Default Screen Sizes
 const int DEFAULT_SCREEN_WIDTH = 640;
@@ -24,7 +23,7 @@ class SDLWindowWrapper {
     public:
         //---------- CONSTRUCTORS & DESTRUCTOR ----------
         SDLWindowWrapper();
-        SDLWindowWrapper(int width, int height, std::string title, bool useTTF = false, int fpsCap = DEFAULT_SCREEN_FPS);
+        SDLWindowWrapper(int width, int height, std::string title, bool useTTF = false, bool useMixer = false, int fpsCap = DEFAULT_SCREEN_FPS);
         SDLWindowWrapper(const SDLWindowWrapper & other);
         SDLWindowWrapper& operator=(const SDLWindowWrapper & other);
         ~SDLWindowWrapper();
@@ -35,10 +34,25 @@ class SDLWindowWrapper {
         void saveImg(std::string path);
 
         //---------- ACCESSORS ----------
+        int getSDLInitCount();
+        int geIMGInitCount();
+        int getTTFInitCount();
+        int getMixerInitCount();
         SDL_Renderer* getRenderer();
         int getWidth();
         int getHeight();
     private:
+        //---------- STATIC PRIVATE MEMBERS ----------
+        // Count of instances of the class using the SDL Library
+        static int SDL_INIT_COUNT;
+        // Count of instances of the class using the SDL_image subsystem
+        static int IMG_INIT_COUNT;
+        // Count of instances of the class using the SDL_ttf subsystem
+        static int TTF_INIT_COUNT;
+        // Count of the instances of the class using the SDL_mixer subsystem
+        static int MIX_INIT_COUNT;
+
+        //---------- PRIVATE MEMBERS ----------
         // Width of the screen
         int screenWidth;
         // Height of the screen
@@ -47,8 +61,10 @@ class SDLWindowWrapper {
         SDL_Window* window;
         // Renderer for the engine
         SDL_Renderer* renderer;
-        // Boolean for whether or not the TTF subsystem is started
+        // Flag for whether or not the TTF subsystem is used
         bool useTTF;
+        // Flag for whether or not the Mixer subsystem is used
+        bool useMixer;
         // Frame rate cap
         int fpsCap;
 
@@ -136,5 +152,10 @@ class SDLTimer {
         // Flag for the timer being started
         bool started;
 };
+
+//---------- EXTERNAL FUNCTIONS ----------
+// Overload SDL_SetRenderDrawColor so that it just takes an SDL_Color
+int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, const SDL_Color& color);
+int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, SDL_Color& color);
 
 #endif

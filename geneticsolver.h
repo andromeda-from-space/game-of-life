@@ -5,8 +5,6 @@
 
 using namespace std;
 
-// TODO - update constructors
-
 /*
 Genetic Algorithm
 
@@ -58,6 +56,11 @@ class GeneticAlgorithm{
         void breed();
         // Mutate the children based on the mutation rate
         void mutate();
+
+        //---------- MUTATORS ----------
+        void setCrossovers(int crossovers);
+        void setMutationRate(double mutationRate);
+        void setTotalGens(int totalGens);
     protected:
         // The size of the population
         int sizePopulation;

@@ -36,11 +36,6 @@ const std::string GOLS_BACKGROUND_PNG = "background.png";
 const int GOLS_FPS = 5;
 const int GOLS_TICKS_PER_FRAME = 1000 / GOLS_FPS;
 
-// Wrapper function to make SetRenderDrawColor a little less annoying
-int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, const SDL_Color& color){
-    return SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-}
-
 void debug_pulsarVisualization(){
     // The oscillating pulsar
     int pulsarRows = 13;

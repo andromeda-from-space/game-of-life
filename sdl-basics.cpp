@@ -8,12 +8,18 @@
 //--------------------------------------------------------------------
 //---------- SDLWindowWrapper ----------------------------------------
 //--------------------------------------------------------------------
+// Initialize the static memory
+int SDLWindowWrapper::SDL_INIT_COUNT = 0;
+int SDLWindowWrapper::IMG_INIT_COUNT = 0;
+int SDLWindowWrapper::TTF_INIT_COUNT = 0;
+int SDLWindowWrapper::MIX_INIT_COUNT = 0;
+
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
-SDLWindowWrapper::SDLWindowWrapper() : screenWidth(DEFAULT_SCREEN_WIDTH), screenHeight(DEFAULT_SCREEN_HEIGHT), window(nullptr), renderer(nullptr), useTTF(true), fpsCap(DEFAULT_SCREEN_TICKS_PER_FRAME) {
+SDLWindowWrapper::SDLWindowWrapper() : screenWidth(DEFAULT_SCREEN_WIDTH), screenHeight(DEFAULT_SCREEN_HEIGHT), window(nullptr), renderer(nullptr), useTTF(true), useMixer(false), fpsCap(DEFAULT_SCREEN_TICKS_PER_FRAME) {
     init("SDL Window");
 }
 
-SDLWindowWrapper::SDLWindowWrapper(int width, int height, std::string title, bool useTTF, int fpsCap) : screenWidth(width), screenHeight(height), window(nullptr), renderer(nullptr), useTTF(useTTF), fpsCap(fpsCap) {
+SDLWindowWrapper::SDLWindowWrapper(int width, int height, std::string title, bool useTTF, bool useMixer, int fpsCap) : screenWidth(width), screenHeight(height), window(nullptr), renderer(nullptr), useTTF(useTTF), useMixer(useMixer), fpsCap(fpsCap) {
     init(title);
 }
 
@@ -35,11 +41,28 @@ SDLWindowWrapper::~SDLWindowWrapper(){
     window = nullptr;
     renderer = nullptr;
 
-    // Quit SDL Subsystems
-    IMG_Quit();
-    SDL_Quit();
+    // Quit SDL Subsystems    
+    SDL_INIT_COUNT--;
+    if(SDL_INIT_COUNT == 0){
+        SDL_Quit();
+    }
+    
+    IMG_INIT_COUNT--;
+    if(IMG_INIT_COUNT == 0){
+        IMG_Quit();
+    }
+
     if(useTTF){
-        TTF_Quit();
+        TTF_INIT_COUNT--;
+        if(TTF_INIT_COUNT == 0){
+            TTF_Quit();
+        }
+    }
+    if(useMixer){
+        MIX_INIT_COUNT--;
+        if(MIX_INIT_COUNT == 0){
+            Mix_Quit();
+        }
     }
 }
 
@@ -71,46 +94,71 @@ int SDLWindowWrapper::getHeight(){
 //---------- PRIVATE UTILITIES ----------
 bool SDLWindowWrapper::init(std::string title){
     // TODO - Make code more compact - early returns make else blocks unnecessary
-    if(SDL_Init(SDL_INIT_VIDEO) < 0){
-        fprintf(stderr, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-        // TODO - exceptions?
-        return false;
-    } else {
-        // Create the window
-        window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, SDL_WINDOW_SHOWN);
-        if(!window){
-            fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+
+    // Initialize the SDL Subsystem if necessary
+    if(SDL_INIT_COUNT == 0){
+        if(SDL_Init(SDL_INIT_VIDEO) < 0){
+            fprintf(stderr, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
             // TODO - exceptions?
             return false;
-        } else {
-            // Create renderer for window
-            renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-            // Turn off vsync for Lesson 25
-            //renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_ACCELERATED);
-            if(!renderer)
-            {
-                fprintf(stderr, "Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
-                return false;
-            } else {
-                //Initialize renderer color
-                SDL_SetRenderDrawColor( renderer, 0xFF, 0xFF, 0xFF, 0xFF );
-
-                // Initialize the SDL_image library
-                int imgFlags = IMG_INIT_PNG;
-                if(!(IMG_Init(imgFlags) & imgFlags)){
-                    fprintf(stderr, "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-                    // TODO - exceptions?
-                    return false;
-                } else {
-                    if(useTTF && TTF_Init() == -1){
-                        fprintf(stderr, "SDL_TTF could not initialize ! TTF_Error: %s\n", TTF_GetError());
-                        // TODO - exceptions?
-                        return false;
-                    }
-                }
-            }
         }
     }
+    SDL_INIT_COUNT++;
+
+    // Attempt to create the window
+    window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, SDL_WINDOW_SHOWN);
+    if(!window){
+        fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        // TODO - exceptions?
+        return false;
+    }
+
+    // Attempt to create renderer for window
+    renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if(!renderer) {
+        fprintf(stderr, "Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
+        // TODO - exceptions?
+        return false;
+    }
+
+    // Initialize renderer color
+    SDL_SetRenderDrawColor( renderer, 0xFF, 0xFF, 0xFF, 0xFF );
+
+    // Attempt to initialize the SDL_image library
+    int imgFlags = IMG_INIT_PNG;
+    if(IMG_INIT_COUNT == 0){
+        if(!(IMG_Init(imgFlags) & imgFlags)){
+            fprintf(stderr, "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+            // TODO - exceptions?
+            return false;
+        }
+    }
+    IMG_INIT_COUNT++;
+    
+    // Attempt to initialize the SDL_ttf library
+    if(useTTF){
+        if(TTF_INIT_COUNT == 0){
+            if(TTF_Init() == -1){
+                fprintf(stderr, "SDL_TTF could not initialize ! TTF_Error: %s\n", TTF_GetError());
+                // TODO - exceptions?
+                return false;
+            }
+        }
+        TTF_INIT_COUNT++;
+    }
+
+    // Attempt to initialize the SDL_mixer library
+    if(useMixer){
+        if(MIX_INIT_COUNT == 0){
+             if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0 ){
+                fprintf(stderr, "SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError() );
+                // TODO - exceptions?
+                return false;
+             }
+        }
+        MIX_INIT_COUNT++;
+    }
+
     return true;
 }
 
@@ -312,4 +360,13 @@ bool SDLTimer::isStarted(){
 
 bool SDLTimer::isPaused(){
     return paused;
+}
+
+//---------- EXTERNAL FUNCTIONS ----------
+int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, const SDL_Color& color){
+    return SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+}
+
+int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, SDL_Color& color){
+    return SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 }
