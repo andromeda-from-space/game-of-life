@@ -35,7 +35,7 @@ class SDLWindowWrapper {
 
         //---------- ACCESSORS ----------
         int getSDLInitCount();
-        int geIMGInitCount();
+        int getIMGInitCount();
         int getTTFInitCount();
         int getMixerInitCount();
         SDL_Renderer* getRenderer();
@@ -158,4 +158,21 @@ class SDLTimer {
 int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, const SDL_Color& color);
 int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, SDL_Color& color);
 
+// Draw a grid of pixels based on the data provided
+// Made with animation in mind - but also allows for a self-contained single frame to be generated
+// - Creates a window at window pointer if the frame rate greater than 0 - allows for the same window to be used 
+// - Uses the background texture, if provided, other wise creates one
+// - Saves image if desired
+
+// Some graphical constants
+// Pixel size width for the tiles
+const int GRID_PIXEL_SIZE = 5;
+// Color for the tiles that are labeled true
+const SDL_Color GRID_FALSE_COLOR = {255, 255, 255, 255};
+// Color for the grid line
+const SDL_Color GRID_LINES_COLOR = {150, 150, 150, 255};
+// Color for the tiles that are labeled false
+const SDL_Color GRID_TRUE_COLOR = {255, 234, 0, 255};
+
+void drawPixelGrid(std::string& title, int rows, int cols, bool** data, SDLWindowWrapper* window, int frameRate = -1, SDLTextureWrapper* background = nullptr, std::string* backgroundOut = nullptr, std::string* saveOutput = nullptr);
 #endif

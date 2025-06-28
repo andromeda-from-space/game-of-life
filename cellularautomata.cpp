@@ -130,12 +130,24 @@ void CellularAutomata1D::setRules(char* newRules){
     }
 }
 
-void snapShot(SDLWindowWrapper & window, bool* start, int domainSize, int numSteps){
-    // TODO
+void CellularAutomata1D::snapShot(bool* start, int domainSize, int numSteps){
+    // Simulate the results
+    bool** results = simulate(start, domainSize, numSteps);
+
+    // Call the other snapshot function
+    snapShot(numSteps, domainSize, results);
+
+    // Clean up
+    for(int i = 0; i < numSteps; i++){
+        delete[](results[i]);
+        results[i] = nullptr;
+    }
+    delete[](results);
 }
 
-void snapShot(SDLWindowWrapper & window, int rows, int cols, int results){
-    // TODO
+void CellularAutomata1D::snapShot(int rows, int cols, bool** results){
+    std::string title = "1D Cellular Automata";
+    drawPixelGrid(title, rows, cols, results, nullptr);
 }
 
 //---------------------------------------- MajoritySolverGA ----------------------------------------
@@ -191,18 +203,19 @@ CellularAutomata1DGeneral::CellularAutomata1DGeneral() {
     // Count of the neighbors in each direction - default is k = 1
     neighborCount = 1;
     // The total number of rules
-    int ruleCount = 2;
+    numRules = 2;
     for(int i = 0; i < 2 * neighborCount; i++){
-        ruleCount *= 2;
+        numRules *= 2;
     }
 
     // Randomly select rules based on coin flip
-    for(int i = 0; i < ruleCount; i++){
+    rules = new char[numRules];
+    for(int i = 0; i < numRules; i++){
         (rng::genRandDouble(0.0, 1.0) > 0.5) ? rules[i] = CA_TRUE : rules[i] = CA_FALSE;
     }
 }
 
-CellularAutomata1DGeneral::CellularAutomata1DGeneral(int neighborCount, bool* rules){
+CellularAutomata1DGeneral::CellularAutomata1DGeneral(int neighborCount, int numRules, char* rules){
     // TODO
 }
 
@@ -232,4 +245,9 @@ int CellularAutomata1DGeneral::majority(bool* start, int domainSize, int maxStep
 
 void CellularAutomata1DGeneral::step(bool* curr, int domainSize){
     // TODO
+}
+
+//---------- MUTATORS ----------
+void setRules(char* newRules){
+
 }

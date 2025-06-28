@@ -289,6 +289,22 @@ bool SDLTextureWrapper::createTextTexture(SDL_Renderer* renderer, TTF_Font* font
 }
 
 //---------- ACCESSORS ----------
+int SDLWindowWrapper::getSDLInitCount(){
+    return SDL_INIT_COUNT;
+}
+
+int SDLWindowWrapper::getIMGInitCount(){
+    return IMG_INIT_COUNT;
+}
+
+int SDLWindowWrapper::getTTFInitCount(){
+    return TTF_INIT_COUNT;
+}
+
+int SDLWindowWrapper::getMixerInitCount(){
+    return MIX_INIT_COUNT;
+}
+
 int SDLTextureWrapper::getWidth(){
     return width;
 }
@@ -369,4 +385,121 @@ int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, const SDL_Color& color){
 
 int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, SDL_Color& color){
     return SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+}
+
+void drawPixelGrid(std::string& title, int rows, int cols, bool** data, SDLWindowWrapper* window, int frameRate, SDLTextureWrapper* background, std::string* backgroundOut, std::string* saveOutput){
+    // Frame rate timer
+    SDLTimer fpsTimer;
+    fpsTimer.start();
+
+    // Flag: if the background texture was provided or not
+    bool backgroundProvided = background == nullptr;
+    // Flag: if the background image should be deleted
+    bool deleteTempImage = backgroundOut == nullptr;
+    if(deleteTempImage){
+        backgroundOut = new std::string("temp_background.png");
+    }
+
+    // Calculate the screen dimensions
+    int screenWidth = cols * (GRID_PIXEL_SIZE + 1) - 1;
+    int screenHeight = rows * (GRID_PIXEL_SIZE + 1) - 1;
+
+    // Create the window and get the renderer
+    if(!window){
+        window = new SDLWindowWrapper(screenWidth, screenHeight, title);
+    }
+    SDL_Renderer* renderer = window->getRenderer();
+
+    // Clear the screen
+    SDL_SetRenderDrawColor(renderer, GRID_FALSE_COLOR);
+    SDL_RenderClear(renderer);
+
+    // Check for pre-rendered bakground and/or make one
+    if(!background){
+        SDLTextureWrapper* background;
+
+        // Clear the screen
+        SDL_SetRenderDrawColor(renderer, GRID_FALSE_COLOR);
+        SDL_RenderClear(renderer);
+
+        // Draw the grid lines
+        SDL_SetRenderDrawColor(renderer, GRID_TRUE_COLOR);
+        // Horizontal Grid Lines
+        for(int i = 0; i < rows - 1; i++){
+            SDL_RenderDrawLine(renderer,
+                0, (GRID_PIXEL_SIZE + 1) * (i + 1) - 1,
+                screenWidth, (GRID_PIXEL_SIZE + 1) * (i + 1) - 1
+            );
+        }
+
+        // Vertical grid lines
+        for(int i = 0; i < cols - 1; i++){
+            SDL_RenderDrawLine(renderer,
+                (GRID_PIXEL_SIZE + 1) * (i + 1) - 1, 0,
+                (GRID_PIXEL_SIZE + 1) * (i + 1) - 1, screenHeight
+            );
+        }
+
+        // Create the background grid
+        window->saveImg(*backgroundOut);
+    
+        // Load the background image
+        background->loadFromFile(renderer, *backgroundOut);
+    }
+    
+    // SDL_Event to track when to quit
+    SDL_Event e;
+    // Continue until the window is exited out of
+    bool quit = false;
+    // Rectangle for filling in the individual value
+    SDL_Rect fillRect = {0, 0, GRID_PIXEL_SIZE, GRID_PIXEL_SIZE};
+
+    // Frame rate timer
+    SDLTimer fpsTimer;
+    // Count of the ticks in the frame
+    int frameTicks;
+
+    // Main loop for SDL for rendering
+    while(!quit){
+        while( SDL_PollEvent( &e ) ){
+            if( e.type == SDL_QUIT ){
+                quit = true;
+            }
+        }
+
+        // Render the tiles
+        SDL_SetRenderDrawColor(renderer, GRID_TRUE_COLOR);
+        for(int i = 0; i < rows; i++){
+            fillRect.x = i * (GRID_PIXEL_SIZE + 1);
+            for(int j = 0; j < cols; j++){
+                fillRect.y = j * (GRID_PIXEL_SIZE + 1);
+                if(data[i][j]){
+                    SDL_RenderFillRect(renderer, &fillRect);
+                }
+            }
+        }
+
+        if(frameRate > 0){
+            int ticksPerFrame = 1000 / frameRate;
+            // Enforce the frame rate cap
+            frameTicks = fpsTimer.getTicks();
+            if( frameTicks < ticksPerFrame ){
+                // Wait remaining time
+                SDL_Delay( ticksPerFrame - frameTicks );
+            }
+            quit = true;
+        }
+    }
+
+    // Clean up
+    if(frameRate < 0){
+        delete(window);
+    }
+    if(!backgroundProvided){
+        delete(background);
+    }
+    if(deleteTempImage){
+        std::remove(backgroundOut->c_str());
+        delete(backgroundOut);
+    }
 }

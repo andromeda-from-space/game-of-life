@@ -302,6 +302,14 @@ void renderOrganism(int orgRows, int orgCols, bool* org, int simRows, int simCol
     }
 }
 
+void debug_drawPixelGrid_SingleFrame(){
+
+}
+
+void debug_drawPixelGrid_Animated(){
+    
+}
+
 int main(){
     /*
     // Square

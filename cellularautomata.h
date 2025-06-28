@@ -48,8 +48,8 @@ class CellularAutomata1D{
 
         //---------- GRAPHICAL REPRESENTATION ----------
         // Create an image of the final result of the rule as applied to the start
-        void snapShot(SDLWindowWrapper & window, bool* start, int domainSize, int numSteps);
-        void snapShot(SDLWindowWrapper & window, int rows, int cols, int results);
+        void snapShot(bool* start, int domainSize, int numSteps);
+        void snapShot(int rows, int cols, bool** results);
     private:
         // The rules for simulation
         char rules[8];
@@ -78,7 +78,7 @@ class CellularAutomata1DGeneral{
     public:
         //---------- CONSTRUCTORS & DESTRUCTOR ----------
         CellularAutomata1DGeneral();
-        CellularAutomata1DGeneral(int neighborCount, bool* rules);
+        CellularAutomata1DGeneral(int neighborCount, int numRules, char* rules);
         CellularAutomata1DGeneral(const CellularAutomata1DGeneral & other);
         CellularAutomata1DGeneral& operator=(const CellularAutomata1DGeneral & other);
         ~CellularAutomata1DGeneral();
@@ -90,9 +90,19 @@ class CellularAutomata1DGeneral{
         int majority(bool* start, int domainSize, int maxSteps);
         // Updates the current domain based on the rules
         void step(bool* curr, int domainSize);
+
+        //---------- MUTATORS ----------
+        void setRules(char* newRules);
+
+        //---------- GRAPHICAL REPRESENTATION ----------
+        // Create an image of the final result of the rule as applied to the start
+        void snapShot(SDLWindowWrapper & window, bool* start, int domainSize, int numSteps);
+        void snapShot(SDLWindowWrapper & window, int rows, int cols, bool** results);
     private:
         // The number of neighbhors to consider in the rule
         int neighborCount;
+        // Size of the rules of array
+        int numRules;
         // The rules for simulation
         char* rules;
 };
