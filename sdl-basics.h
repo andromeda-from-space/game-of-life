@@ -10,6 +10,7 @@
 // TODO - deep copying
 // TODO - shared pointers
 // TODO - more sophisticated text handling
+// TODO - write a version of drawPixelGrid that takes a user defined struct for parameters to make setting default parameters less of a headache
 
 // Default Screen Sizes
 const int DEFAULT_SCREEN_WIDTH = 640;
@@ -101,6 +102,8 @@ class SDLTextureWrapper {
         void setBlendMode(SDL_BlendMode blending);
         // Create a textuyre for some text
         bool createTextTexture(SDL_Renderer* renderer, TTF_Font* font, std::string text, SDL_Color& color);
+        // Render to this texture
+        friend void renderToTexture(SDL_Renderer* renderer, SDLTextureWrapper& textureWrapper);
 
         //---------- ACCESSORS ----------
         int getWidth();
@@ -153,18 +156,7 @@ class SDLTimer {
         bool started;
 };
 
-//---------- EXTERNAL FUNCTIONS ----------
-// Overload SDL_SetRenderDrawColor so that it just takes an SDL_Color
-int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, const SDL_Color& color);
-int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, SDL_Color& color);
-
-// Draw a grid of pixels based on the data provided
-// Made with animation in mind - but also allows for a self-contained single frame to be generated
-// - Creates a window at window pointer if the frame rate greater than 0 - allows for the same window to be used 
-// - Uses the background texture, if provided, other wise creates one
-// - Saves image if desired
-
-// Some graphical constants
+// Some default graphical constants
 // Pixel size width for the tiles
 const int GRID_PIXEL_SIZE = 20;
 // Color for the tiles that are labeled true
@@ -174,9 +166,66 @@ const SDL_Color GRID_LINES_COLOR = {150, 150, 150, 255};
 // Color for the tiles that are labeled false
 const SDL_Color GRID_TRUE_COLOR = {255, 234, 0, 255};
 
-// Draws the pixel grid provided as either on or off
-void drawPixelGrid(std::string& title, int rows, int cols, bool** data, SDLWindowWrapper* window, int frameRate = -1, SDLTextureWrapper* background = nullptr, std::string* backgroundOut = nullptr, std::string* saveOutput = nullptr);
+enum class ScrollDirection {
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
+};
 
-// Makes a scrolling image of the pixel grid provided as SDL_Colors, scrolls right to left
-void scrolling(int rows, int cols, SDL_Color** data);
+class SDLPixelGridRenderer {
+    public:
+        //---------- CONSTRUCTORS & DESTRUCTOR ----------
+        SDLPixelGridRenderer();
+        SDLPixelGridRenderer(std::string title, int rows, int cols, int frameRate = -1);
+        SDLPixelGridRenderer(const SDLPixelGridRenderer& other);
+        SDLPixelGridRenderer& operator=(const SDLPixelGridRenderer& other);
+        ~SDLPixelGridRenderer();
+        
+
+        //---------- UTILITIES ----------
+        // Draws a still of the provided data
+        void drawBoolGrid(bool** data, bool saveOutput, std::string path);
+        // Animates provided data
+        void animateBoolGrid(bool*** data, int frameCount, int frameRate, bool saveOutput, std::string path);
+        // Scrolls the provided data in the direction provided
+        void scrollBoolGrid(bool** data, int frameCount, ScrollDirection direction, bool saveOutput, std::string path);
+
+        //---------- MUTATORS ----------
+        void setFalseColor(SDL_Color newColor);
+        void setGridLineColor(SDL_Color newColor);
+        void setTrueColor(SDL_Color newColor);
+    private:
+        // Number of rows in the pixel grid
+        int rows;
+        // Number of columns in the pixel grid
+        int cols;
+        // Ticks per frame for the 
+        int ticksPerFrame;
+        // The window to render in
+        SDLWindowWrapper* window;
+        // The renderer
+        SDL_Renderer* renderer;
+        // Timer for the fps
+        SDLTimer fpsTimer;
+        // Texture to hold the background image
+        SDLTextureWrapper background;
+        // "Pixel" size
+        int pixelSize;
+        // Color of "false" in the boolean data
+        SDL_Color falseColor;
+        // Color of the gridlines
+        SDL_Color gridLineColor;
+        // Color of "true" in the boolean data
+        SDL_Color trueColor;
+
+        //---------- PRIVATE UTILITIES ----------
+        void drawBackground();
+};
+
+//---------- EXTERNAL FUNCTIONS ----------
+// Overload SDL_SetRenderDrawColor so that it just takes an SDL_Color
+int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, const SDL_Color& color);
+int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, SDL_Color& color);
+
 #endif

@@ -287,6 +287,10 @@ bool SDLTextureWrapper::createTextTexture(SDL_Renderer* renderer, TTF_Font* font
     return success;
 }
 
+void renderToTexture(SDL_Renderer* renderer, SDLTextureWrapper& textureWrapper){
+    SDL_SetRenderTarget(renderer, textureWrapper.texture);
+}
+
 //---------- ACCESSORS ----------
 int SDLWindowWrapper::getSDLInitCount(){
     return SDL_INIT_COUNT;
@@ -377,216 +381,196 @@ bool SDLTimer::isPaused(){
     return paused;
 }
 
-//---------- EXTERNAL FUNCTIONS ----------
-int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, const SDL_Color& color){
-    return SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+//--------------------------------------------------------------------
+//---------- SDLPixelGridRenderer ------------------------------------
+//--------------------------------------------------------------------
+//---------- CONSTRUCTORS & DESTRUCTOR ----------
+SDLPixelGridRenderer::SDLPixelGridRenderer() : rows(-1), cols(-1), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(GRID_FALSE_COLOR), gridLineColor(GRID_LINES_COLOR), trueColor(GRID_TRUE_COLOR){}
+
+SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols, int frameRate = -1) : rows(rows), cols(cols), ticksPerFrame(1000 / frameRate), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(GRID_FALSE_COLOR), gridLineColor(GRID_LINES_COLOR), trueColor(GRID_TRUE_COLOR) {
+    // Calculate the window width and height
+    int windowWidth = cols * (pixelSize + 1) - 1;
+    int windowHeight = rows * (pixelSize + 1) - 1;
+
+    // Create the window
+    window = new SDLWindowWrapper(windowWidth, windowHeight, "Pixel Grid");
+
+    // Pull out the renderer
+    renderer = window->getRenderer();
+
+    // Create the texture for the background
+    drawBackground();
+
+    // Reset the renderer
+    SDL_SetRenderTarget(renderer, NULL);
 }
 
-int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, SDL_Color& color){
-    return SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+SDLPixelGridRenderer::SDLPixelGridRenderer(const SDLPixelGridRenderer& other){
+    // TODO
 }
 
-void drawPixelGrid(std::string& title, int rows, int cols, bool** data, SDLWindowWrapper* window, int frameRate, SDLTextureWrapper* background, std::string* backgroundOut, std::string* saveOutput){
-    // Frame rate timer
-    SDLTimer fpsTimer;
-    fpsTimer.start();
+SDLPixelGridRenderer& SDLPixelGridRenderer::operator=(const SDLPixelGridRenderer& other){
+    // TODO
+    return *this;
+}
 
-    // Flag: if the background texture was provided or not
-    bool backgroundProvided = background == nullptr;
-    // Flag: if the background image should be deleted
-    bool deleteTempImage = backgroundOut == nullptr;
-    if(deleteTempImage){
-        backgroundOut = new std::string("temp_background.png");
-    }
+SDLPixelGridRenderer::~SDLPixelGridRenderer(){
+    delete(window);
+}
 
-    // Calculate the screen dimensions
-    int screenWidth = cols * (GRID_PIXEL_SIZE + 1) - 1;
-    int screenHeight = rows * (GRID_PIXEL_SIZE + 1) - 1;
-
-    // Create the window and get the renderer
-    if(!window){
-        window = new SDLWindowWrapper(screenWidth, screenHeight, title);
-    }
-    SDL_Renderer* renderer = window->getRenderer();
-
-    // Clear the screen
-    SDL_SetRenderDrawColor(renderer, GRID_FALSE_COLOR);
-    SDL_RenderClear(renderer);
-
-    // Check for pre-rendered bakground and/or make one
-    if(!background){
-        background = new SDLTextureWrapper();
-
-        // Clear the screen
-        SDL_SetRenderDrawColor(renderer, GRID_FALSE_COLOR);
-        SDL_RenderClear(renderer);
-
-        // Draw the grid lines
-        SDL_SetRenderDrawColor(renderer, GRID_LINES_COLOR);
-        // Horizontal Grid Lines
-        for(int i = 0; i < rows - 1; i++){
-            SDL_RenderDrawLine(renderer,
-                0, (GRID_PIXEL_SIZE + 1) * (i + 1) - 1,
-                screenWidth, (GRID_PIXEL_SIZE + 1) * (i + 1) - 1
-            );
-        }
-
-        // Vertical grid lines
-        for(int i = 0; i < cols - 1; i++){
-            SDL_RenderDrawLine(renderer,
-                (GRID_PIXEL_SIZE + 1) * (i + 1) - 1, 0,
-                (GRID_PIXEL_SIZE + 1) * (i + 1) - 1, screenHeight
-            );
-        }
-
-        // Create the background grid
-        window->saveImg(*backgroundOut);
-    
-        // Load the background image
-        background->loadFromFile(renderer, *backgroundOut);
-    }
-    
-    // SDL_Event to track when to quit
-    SDL_Event e;
-    // Continue until the window is exited out of
+//---------- UTILITIES ----------
+void SDLPixelGridRenderer::drawBoolGrid(bool** data, bool saveOutput, std::string path){
+        // Flag to exit the window
     bool quit = false;
-    // Rectangle for filling in the individual value
-    SDL_Rect fillRect = {0, 0, GRID_PIXEL_SIZE, GRID_PIXEL_SIZE};
+    // SDL Event to track if 'x' has been pressed
+    SDL_Event e;
+    // Rectangle for filling the pixels
+    SDL_Rect fillRect = {0, 0, pixelSize, pixelSize};
+    // String stream to make unique file names
+    std::stringstream filenameMaker;
+    std::string outputFilename;
 
-    // Count of the ticks in the frame
-    int frameTicks;
 
-    // Render the background
-    background->render(renderer, 0, 0);
+        // Render the background
+    background.render(renderer, 0, 0);
 
-    // Render the tiles
-    SDL_SetRenderDrawColor(renderer, GRID_TRUE_COLOR);
+    // Render the "on" tiles
+    SDL_SetRenderDrawColor(renderer, trueColor);
     for(int i = 0; i < rows; i++){
-        fillRect.x = i * (GRID_PIXEL_SIZE + 1);
+        fillRect.y = i * (pixelSize + 1);
         for(int j = 0; j < cols; j++){
-            fillRect.y = j * (GRID_PIXEL_SIZE + 1);
+            fillRect.x = j * (pixelSize + 1);
             if(data[i][j]){
                 SDL_RenderFillRect(renderer, &fillRect);
             }
         }
     }
 
-    // Draw to the scren
-    SDL_RenderPresent( renderer );
+    // Save the current frame
+    if(saveOutput){
+        window->saveImg(path);
+    }
 
-    // Main loop for SDL - simply delays the code until the window is exited
+    // Update the screen
+    SDL_RenderPresent(renderer);
+
+    // Create all frames
     while(!quit){
+        // Poll events to enable the exit out button
         while( SDL_PollEvent( &e ) ){
             if( e.type == SDL_QUIT ){
                 quit = true;
             }
         }
-
-        if(frameRate > 0){
-            int ticksPerFrame = 1000 / frameRate;
-            // Enforce the frame rate cap
-            frameTicks = fpsTimer.getTicks();
-            if( frameTicks < ticksPerFrame ){
-                // Wait remaining time
-                SDL_Delay( ticksPerFrame - frameTicks );
-            }
-            quit = true;
-        }
-    }
-
-    // Clean up
-    if(frameRate < 0){
-        delete(window);
-    }
-    if(!backgroundProvided){
-        delete(background);
-    }
-    if(deleteTempImage){
-        std::remove(backgroundOut->c_str());
-        delete(backgroundOut);
     }
 }
 
-void scrolling(int rows, int cols, SDL_Color** data){
-    // Frame rate timer
-    SDLTimer fpsTimer;
-    fpsTimer.start();
-
-    // Background grid
-    std::string tempBackground = "temp_background.png";
-
-    // Calculate the screen dimensions
-    int screenWidth = cols * (GRID_PIXEL_SIZE + 1) - 1;
-    int screenHeight = rows * (GRID_PIXEL_SIZE + 1) - 1;
-
-    // Create the window and get the renderer
-    SDLWindowWrapper window = SDLWindowWrapper(screenWidth, screenHeight, "Scroll");
-    SDL_Renderer* renderer = window.getRenderer();
-
-    // Clear the screen
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderClear(renderer);
-
-    // Check for pre-rendered bakground and/or make one
-    SDLTextureWrapper background = SDLTextureWrapper();
-
-    // Clear the screen
-    SDL_SetRenderDrawColor(renderer, GRID_FALSE_COLOR);
-    SDL_RenderClear(renderer);
-
-    // Draw the grid lines
-    SDL_SetRenderDrawColor(renderer, GRID_LINES_COLOR);
-    // Horizontal Grid Lines
-    for(int i = 0; i < rows - 1; i++){
-        SDL_RenderDrawLine(renderer,
-            0, (GRID_PIXEL_SIZE + 1) * (i + 1) - 1,
-            screenWidth, (GRID_PIXEL_SIZE + 1) * (i + 1) - 1
-        );
-    }
-
-    // Vertical grid lines
-    for(int i = 0; i < cols - 1; i++){
-        SDL_RenderDrawLine(renderer,
-            (GRID_PIXEL_SIZE + 1) * (i + 1) - 1, 0,
-            (GRID_PIXEL_SIZE + 1) * (i + 1) - 1, screenHeight
-        );
-    }
-
-    // Create the background grid
-    window.saveImg(tempBackground);
-
-    // Load the background image
-    background.loadFromFile(renderer, tempBackground);
-
-    // SDL_Event to track when to quit
-    SDL_Event e;
-    // Continue until the window is exited out of
+void SDLPixelGridRenderer::animateBoolGrid(bool*** data, int frameCount, int frameRate, bool saveOutput, std::string path){
+    // Flag to exit the window
     bool quit = false;
-    // Rectangle for filling in the individual value
-    SDL_Rect fillRect = {0, 0, GRID_PIXEL_SIZE, GRID_PIXEL_SIZE};
+    // SDL Event to track if 'x' has been pressed
+    SDL_Event e;
+    // Rectangle for filling the pixels
+    SDL_Rect fillRect = {0, 0, pixelSize, pixelSize};
+    // String stream to make unique file names
+    std::stringstream filenameMaker;
+    std::string outputFilename;
+    // The count of ticks since the previous frame
+    int currTicks;
 
-    // Count of the ticks in the frame
-    int frameTicks;
-    // Ticks per frame - 5 frames per second
-    int ticksPerFrame = 500;
+    // Create all frames
+    for(int k = 0; k < frameCount; k++){
+        while(!quit){
+            // Start the fps timer
+            fpsTimer.start();
 
-    // Temporary pointer for the pointer shuffle
-    SDL_Color* temp;
+            // Poll events to enable the exit out button
+            while( SDL_PollEvent( &e ) ){
+                if( e.type == SDL_QUIT ){
+                    quit = true;
+                }
+            }
 
-    // Transpose the color data so that it will scroll more easily
-    SDL_Color** dataTranspose = new SDL_Color*[cols];
-    for(int j = 0; j < cols; j++){
-        dataTranspose[j] = new SDL_Color[rows];
-    }
+            // Render the background
+            background.render(renderer, 0, 0);
 
-    for(int i = 0; i < rows; i++){
-        for(int j = 0; j < cols; j++){
-            dataTranspose[j][i] = data[i][j];
+            // Render the "on" tiles
+            SDL_SetRenderDrawColor(renderer, trueColor);
+            for(int i = 0; i < rows; i++){
+                fillRect.y = i * (pixelSize + 1);
+                for(int j = 0; j < cols; j++){
+                    fillRect.x = j * (pixelSize + 1);
+                    if(data[k][i][j]){
+                        SDL_RenderFillRect(renderer, &fillRect);
+                    }
+                }
+            }
+
+            // Save the current frame
+            if(saveOutput){
+                filenameMaker << path << k << ".png";
+                outputFilename = filenameMaker.str();
+                filenameMaker.str();
+                window->saveImg(outputFilename);
+            }
+
+            // Update the screen
+            SDL_RenderPresent(renderer);
+
+            // Check the ticks
+            currTicks = fpsTimer.getTicks();
+            if(currTicks < ticksPerFrame){
+                // Wait remaining time
+                SDL_Delay(ticksPerFrame - currTicks);
+            }
         }
     }
+}
 
-    // Main loop for SDL - simply delays the code until the window is exited
+void SDLPixelGridRenderer::scrollBoolGrid(bool** data, int frameCount, ScrollDirection direction, bool saveOutput, std::string path){
+    // Flag to exit the window
+    bool quit = false;
+    // SDL Event to track if 'x' has been pressed
+    SDL_Event e;
+    // Rectangle for filling the pixels
+    SDL_Rect fillRect = {0, 0, pixelSize, pixelSize};
+    // String stream to make unique file names
+    std::stringstream filenameMaker;
+    std::string outputFilename;
+    // The count of ticks since the previous frame
+    int currTicks;
+    // Current frame
+    int currFrame = 0;
+    // Current data to render
+    bool** currData;
+    // Temporary pointer for doing the pointer swap
+    bool* temp;
+    // Transpose the data if left to right for more efficient rendering
+    if(direction == ScrollDirection::LEFT || direction == ScrollDirection::RIGHT){
+        bool** currData = new bool*[cols];
+        for(int j = 0; j < rows; j++){
+            currData = new bool*[rows];
+            for(int i = 0; j < cols; i++){
+                currData[i][j] = data[j][i];
+            }
+        }
+    } else {
+        // Otherwise just copy the data
+        currData = new bool*[rows];
+        for(int i = 0; i < rows; i++){
+            currData = new bool*[cols];
+            for(int j = 0; j < cols; j++){
+                currData[i][j] = data[i][j];
+            }
+        }
+    }
+    
+    // Create all frames
     while(!quit){
+        // Start the fps timer
+        fpsTimer.start();
+
+        // Poll events to enable the exit out button
         while( SDL_PollEvent( &e ) ){
             if( e.type == SDL_QUIT ){
                 quit = true;
@@ -596,36 +580,150 @@ void scrolling(int rows, int cols, SDL_Color** data){
         // Render the background
         background.render(renderer, 0, 0);
 
-        // Render the tiles
-        for(int j = 0; j < cols; j++){
-            fillRect.x = j * (GRID_PIXEL_SIZE + 1);
+        // Set the render color for the "on" tiles
+        SDL_SetRenderDrawColor(renderer, trueColor);
+        if(direction == ScrollDirection::UP || direction == ScrollDirection::DOWN){
+            // Up/Down direction, Render the "on" tiles
             for(int i = 0; i < rows; i++){
-                fillRect.y = i * (GRID_PIXEL_SIZE + 1);
-                SDL_SetRenderDrawColor(renderer, dataTranspose[j][i]);
-                SDL_RenderFillRect(renderer, &fillRect);
+                fillRect.y = i * (pixelSize + 1);
+                for(int j = 0; j < cols; j++){
+                    fillRect.x = j * (pixelSize + 1);
+                    if(currData[i][j]){
+                        SDL_RenderFillRect(renderer, &fillRect);
+                    }
+                }
+            }
+
+            // Scroll the grid
+            if(direction == ScrollDirection::UP){
+                temp = currData[0];
+                for(int i = 0; i < rows - 1; i++){
+                    currData[i] = currData[i + 1];
+                }
+                currData[rows - 1] = temp;
+            } else {
+                temp = currData[rows - 1];
+                for(int i = rows - 1; i > 0; i--){
+                    currData[i] = currData[i - 1];
+                }
+                currData[0] = temp;
+            }
+        } else {
+            // Left/Right - use transpose
+            for(int j = 0; j < cols; j++){
+                fillRect.x = j * (pixelSize + 1);
+                for(int i = 0; i < rows; i++){
+                    fillRect.y = i * (pixelSize + 1);
+                    if(currData[j][i]){
+                        SDL_RenderFillRect(renderer, &fillRect);
+                    }
+                }
+            }
+
+            // Scroll the grid
+            if(direction == ScrollDirection::LEFT){
+                temp = currData[0];
+                for(int j = 0; j < cols - 1; j++){
+                    currData[j] = currData[j + 1];
+                }
+                currData[cols - 1] = temp;
+            } else {
+                temp = currData[cols - 1];
+                for(int j = cols - 1; j > 0; j--){
+                    currData[j] = currData[j - 1];
+                }
+                currData[0] = temp;
             }
         }
-        
-        // Draw to the scren
-        SDL_RenderPresent( renderer );
 
-        // Cycle the columns
-        temp = dataTranspose[0];
-        for(int j = 0; j < cols - 1; j++){
-            dataTranspose[j] = dataTranspose[j + 1];
+        // Save the current frame
+        if(saveOutput){
+            filenameMaker << path << currFrame << ".png";
+            outputFilename = filenameMaker.str();
+            filenameMaker.str();
+            window->saveImg(outputFilename);
         }
-        dataTranspose[cols - 1] = temp;
 
-        // Enforce the frame rate cap
-        frameTicks = fpsTimer.getTicks();
-        if(frameTicks < ticksPerFrame){
+        // Update the screen
+        SDL_RenderPresent(renderer);
+
+        // Check the ticks
+        currTicks = fpsTimer.getTicks();
+        if(currTicks < ticksPerFrame){
             // Wait remaining time
-            SDL_Delay(ticksPerFrame - frameTicks);
-            // Reset the timer
-            fpsTimer.start();
+            SDL_Delay(ticksPerFrame - currTicks);
         }
+
+        // Check frames
+        if(frameCount > 0){
+            if(currFrame == frameCount){
+                quit = true;
+            }
+        }
+        currFrame++;
+    }
+}
+
+//---------- MUTATORS ----------
+void SDLPixelGridRenderer::setFalseColor(SDL_Color newColor){
+    falseColor = newColor;
+    
+    // Redraw the background
+    drawBackground();
+}
+
+void SDLPixelGridRenderer::setGridLineColor(SDL_Color newColor){
+    gridLineColor = newColor;
+
+    // Redraw the background
+    drawBackground();
+}
+
+void SDLPixelGridRenderer::setTrueColor(SDL_Color newColor){
+    trueColor = newColor;
+}
+
+
+void SDLPixelGridRenderer::drawBackground(){
+    // Calculate the window width and height
+    int windowWidth = cols * (pixelSize + 1) - 1;
+    int windowHeight = rows * (pixelSize + 1) - 1;
+
+    // Create the texture for the background
+    renderToTexture(renderer, background);
+
+    // Make the background
+    // Clear the renderer
+    SDL_SetRenderDrawColor(renderer, falseColor);
+    SDL_RenderClear(renderer);
+
+    // Draw the grid lines
+    SDL_SetRenderDrawColor(renderer, gridLineColor);
+    // Horizontal Grid Lines
+    for(int i = 0; i < rows - 1; i++){
+        SDL_RenderDrawLine(renderer,
+            0, (pixelSize + 1) * (i + 1) - 1,
+            windowWidth, (pixelSize + 1) * (i + 1) - 1
+        );
     }
 
-    // Clean up
-    std::remove(tempBackground.c_str());
+    // Vertical grid lines
+    for(int i = 0; i < cols - 1; i++){
+        SDL_RenderDrawLine(renderer,
+            (pixelSize + 1) * (i + 1) - 1, 0,
+            (pixelSize + 1) * (i + 1) - 1, windowHeight
+        );
+    }
+
+    // Reset the renderer
+    SDL_SetRenderTarget(renderer, NULL);
+}
+
+//---------- EXTERNAL FUNCTIONS ----------
+int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, const SDL_Color& color){
+    return SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+}
+
+int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, SDL_Color& color){
+    return SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 }

@@ -2,6 +2,7 @@
 #include <string>
 #include <SDL2/SDL.h>
 #include <iostream>
+#include <sstream>
 //-- BEGIN UNIX ONLY--
 #include <unistd.h>
 // Code that is not portable will be marked as much as possible
@@ -37,7 +38,7 @@ const int GOLS_FPS = 5;
 const int GOLS_TICKS_PER_FRAME = 1000 / GOLS_FPS;
 
 // Debugging function
-//cerr << "DEBUG: << __FILE__ << " line " << __LINE__ << "\n";
+// cerr << "DEBUG: " << __FILE__ << " line " << __LINE__ << "\n";
 
 // Creating the video in ffmpeg
 //ffmpeg -f image2 -framerate 5 -i frame%d.png -vcodec libx264 -crf 22 video.mp4
@@ -368,34 +369,146 @@ void test_drawPixelGrid_SingleFrame(){
 
     // Call drawPixelGrid
     std::string title = "Test: Still";
-    drawPixelGrid(title, rows, cols, grid, nullptr);
+    drawPixelGrid(title, rows, cols, grid);
+
+    // Clean up the grid
+    for(int i = 0; i < rows; i++){
+        delete[](grid[i]);
+        grid[i] = nullptr;
+    }
+    delete[](grid);
 }
 
 void test_drawPixelGrid_Animated(){
     // Initialize test data
     int rows = 7;
     int cols = 7;
-    bool** grid = new bool*[7];
+    
+    // First Grid
+    bool** grid0 = new bool*[7];
     for(int i = 0; i < rows; i++){
-        grid[i] = new bool[7];
-    }
-
-    // Set to true and false
-    for(int i = 0; i < rows; i++){
+        grid0[i] = new bool[7];
         for(int j = 0; j < cols; j++){
             if((i * cols + j) % 2 == 0){
-                grid[i][j] = false;
+                grid0[i][j] = false;
             } else {
-                grid[i][j] = true;
+                grid0[i][j] = true;
+            }
+        }
+    }
+
+    // Second Grid
+    bool** grid1 = new bool*[7];
+    for(int i = 0; i < rows; i++){
+        grid1[i] = new bool[7];
+        for(int j = 0; j < cols; j++){
+            grid1[i][j] = false;
+        }
+    }
+
+    // Third Grid
+    bool** grid2 = new bool*[7];
+    for(int i = 0; i < rows; i++){
+        grid2[i] = new bool[7];
+        for(int j = 0; j < cols; j++){
+            if((i * cols + j) % 2 == 0){
+                grid2[i][j] = true;
+            } else {
+                grid2[i][j] = false;
             }
         }
     }
 
     // Call drawPixelGrid
     std::string title = "Test: Animated";
+
+    // Save file name stufff
+    std::string* saveFilename = new std::string();;
+    std::string prefix = "video/frame";
+    std::string suffix = ".png";
+    std::stringstream saveFilenameMaker; 
+    saveFilenameMaker << prefix << 0 << suffix;
+    *saveFilename = saveFilenameMaker.str();
+
+    // Window
     SDLWindowWrapper* window = nullptr;
+
+    // Frame rate
     int frameRate = 5;
-    drawPixelGrid(title, rows, cols, grid, window, frameRate);
+
+    // Background file name
+    std::string* backgroundFilename = new std::string();
+    *backgroundFilename = "temp_background.png";
+    
+    // Make the first frame
+    drawPixelGrid(title, rows, cols, grid0, saveFilename, window, frameRate, nullptr, backgroundFilename);
+
+    if(window){
+        cerr << "Pointer working as expected.";
+    } else {
+        cerr << "Not as expected - use a reference or change the spec.";
+    }
+
+    // Grab the renderer from the window
+    SDL_Renderer* renderer = window->getRenderer();
+
+    // Load the second background into a texture
+    SDLTextureWrapper* backgroundTexture = new SDLTextureWrapper();
+    backgroundTexture->loadFromFile(renderer, *backgroundFilename);
+
+    // The current grid
+    bool** currGrid;
+    int modVal;
+
+    // Loop for the video
+    for(int i = 0; i < 10; i++){
+        // Make a new file name
+        saveFilenameMaker.str(std::string());
+        saveFilenameMaker << prefix << i << suffix;
+        *saveFilename = saveFilenameMaker.str();
+
+        // Four frame cycle
+        modVal = i % 4;
+        if(modVal == 0){
+            currGrid = grid1;
+        } else if(modVal == 1){
+            currGrid = grid2;
+        } else if(modVal == 2){
+            currGrid = grid1;
+        } else{
+            currGrid = grid0;
+        }
+
+        // Update the frames
+        cerr << "DEBUG: " << __FILE__ << " line " << __LINE__ << "\n";
+        drawPixelGrid(title, rows, cols, currGrid, saveFilename, window, frameRate, backgroundTexture, backgroundFilename);
+    }
+    // The frame rate might get a little wonky, because enough of this is done independent of all the main loop. Might be worth encapsulating it into it's own class.
+
+    // Cleanup
+    // Delete the grids
+    for(int i = 0; i < rows; i++){
+        delete[](grid0[i]);
+        grid0[0] = nullptr;
+        delete[](grid1[i]);
+        grid1[0] = nullptr;
+        delete[](grid2[i]);
+        grid2[0] = nullptr;
+    }
+    delete[](grid0);
+    delete[](grid1);
+    delete[](grid2);
+    
+    // Delete the background PNG
+    std::remove(backgroundFilename->c_str());
+
+    // Delete the strings
+    delete(backgroundFilename);
+    delete(saveFilename);
+
+    // Delete the SDL data
+    delete(backgroundTexture);
+    delete(window);    
 }
 
 void test_scrolling(){
@@ -425,10 +538,9 @@ void printHelpMenu(){
     cerr << "\t\t1 - test basic animated organism - still life \"square\"\n";
     cerr << "\t\t2 - test basic animated organism - \"glider\"\n";
     cerr << "\t\t3 - test code for creating a single still image\n";
-    cerr << "\t\t4 - test code for creating a animation\n";
-    cerr << "\t\t5 - test code that wraps the animation as an example of how to use it efficiently\n";
-    cerr << "\t\t6 - test code for the GameOfLife class.\n";
-    cerr << "\r\t7 - test scrolling pixel art code.\n";
+    cerr << "\t\t4 - test code that wraps the animation as an example of how to use it efficiently\n";
+    cerr << "\t\t5 - test code for the GameOfLife class.\n";
+    cerr << "\r\t6 - test scrolling pixel art code.\n";
     // Run code
     cerr << "\t-r # - experiment mode with options:\n";
     // TODO - update the help menu
@@ -450,18 +562,16 @@ void testOptions(int testFlag){
             test_drawPixelGrid_SingleFrame();   // PASSED
             break;
         case 4:
-            cerr << "Not implemented\n";
-            // TODO
+            test_drawPixelGrid_Animated();
             break;
         case 5:
-            cerr << "Not implemented\n";
-            // TODO
-            break;
-        case 6:
             test_GameOfLife();  // PASSED
             break;
-        case 7:
+        case 6:
             test_scrolling();   // PASSED
+            break;
+        case 7:
+            cerr << "Not implemented\n";
             break;
         default:
             cerr << "Invalid testing code. See help menu (-h)\n";
