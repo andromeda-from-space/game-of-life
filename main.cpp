@@ -11,9 +11,8 @@
 
 #include "sdl-basics.h"
 #include "geneticsolver.h"
+#include "cellularautomata.h"
 #include "gameoflife.h"
-
-// TODO - Test Pixel Grid Class
 
 //---------- TESTING FUNCTION CONSTANTS ----------
 // Default constants for the solver class
@@ -513,6 +512,79 @@ void test_scrollColorGrid(){
     delete[](pixelArt);
 }
 
+void test_cellularAutomata1D(){
+    // Initialize with rule 30 - see https://mathworld.wolfram.com/CellularAutomaton.html
+    // Note the graphic at that link is confusing
+    char rules30[8] = {'1', '1', '1', '0', '0', '0', '0', '1'};
+    CellularAutomata1D example = CellularAutomata1D(rules30);
+
+    // Initialize starting point
+    int domainSize = 31;
+    bool start[domainSize];
+    for(int i = 0; i < domainSize; i ++){
+        start[i] = true;
+    }
+    start[15] = false;
+    int numSteps = 15;
+
+    // Generate the snapshot
+    example.snapShot(start, domainSize, numSteps);
+}
+
+
+void test_cellularAutomata1DGeneral(){
+    // Initialize with rule 30 - see https://mathworld.wolfram.com/CellularAutomaton.html
+    // Note the graphic at that link is confusing
+    char rules30[8] = {'1', '1', '1', '0', '0', '0', '0', '1'};
+    CellularAutomata1DGeneral example = CellularAutomata1DGeneral(1, rules30);
+
+    // Initialize starting point
+    int domainSize = 31;
+    bool start[domainSize];
+    for(int i = 0; i < domainSize; i ++){
+        start[i] = true;
+    }
+    start[15] = false;
+    int numSteps = 15;
+
+    // Generate the snapshot
+    example.snapShot(start, domainSize, numSteps);
+
+    // Repeat with a random ruleset
+    example = CellularAutomata1DGeneral(2);
+    example.snapShot(start, domainSize, numSteps);
+}
+
+void test_WrapInt(){
+    WrapInt wrapInt = WrapInt();
+    wrapInt.max = 7;
+
+    wrapInt.currVal = 5;
+    wrapInt.currVal += 5;
+    wrapInt.wrapVal();
+    cout << "Actual: " << wrapInt.currVal  << " Expected: 3\n";
+    
+    wrapInt.currVal = 3;
+    wrapInt.currVal -= 5;
+    wrapInt.wrapVal();
+    cout << "Actual: " << wrapInt.currVal << " Expected: 5\n";
+    
+    wrapInt.currVal = 3;
+    wrapInt.currVal += wrapInt.max;
+    wrapInt.wrapVal();
+    cout << "Actual: " << wrapInt.currVal << " Expected: 3\n";
+
+    wrapInt.currVal = 5;
+    wrapInt.currVal -= wrapInt.max;
+    wrapInt.wrapVal();
+    cout << "Actual: " << wrapInt.currVal << " Expected: 5\n";
+
+    wrapInt.currVal = 5;
+    wrapInt.currVal -= 2 * wrapInt.max;
+    wrapInt.wrapVal();
+    cout << "Actual: " << wrapInt.currVal << " Expected: 5\n";
+}
+
 //---------- COMMAND LINE ARGUMENT FUNCTIONS ----------
 // Prints the help menu
 void printHelpMenu(){
@@ -528,6 +600,9 @@ void printHelpMenu(){
     cerr << "\t\t5 - test scrolling boolean pixel art code.\n";
     cerr << "\r\t6 - test scrolling color pixel art code.\n";
     cerr << "\t\t7 - test code for the GameOfLife class.\n";
+    cerr << "\t\t8 - test the basic cellular automaton code.\n";
+    cerr << "\t\t9 - test the generalized cellular automaton code.\n";
+    cerr << "\t\t10 - test the WrapInt Class.\n";
     // Run code
     cerr << "\t-r # - experiment mode with options:\n";
     // TODO - update the help menu
@@ -555,10 +630,19 @@ void testOptions(int testFlag){
             test_scrollBoolGrid();  // PASSED - ALL DIRECTIONS
             break;
         case 6:
-            test_scrollColorGrid(); // UNTESTED 
+            test_scrollColorGrid(); // PASSED 
             break;
         case 7:
             test_GameOfLife();  // PASSED
+            break;
+        case 8:
+            test_cellularAutomata1D();  // PASSED
+            break;
+        case 9:
+            test_cellularAutomata1DGeneral(); // FAILED
+            break;
+        case 10:
+            test_WrapInt();
             break;
         default:
             cerr << "Invalid testing code. See help menu (-h)\n";

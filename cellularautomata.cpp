@@ -1,22 +1,29 @@
+//--DEBUG--
+#include <iostream>
+//--END DEBUG--
 #include "cellularautomata.h"
 #include "rng.h"
+#include "sdl-basics.h"
 
 //---------------------------------------- CellularAutomata1D ----------------------------------------
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
-CellularAutomata1D::CellularAutomata1D(){
+CellularAutomata1D::CellularAutomata1D() : rules(nullptr){
     // Randomly select rules based on coin flip
+    rules = new char[8];
     for(int i = 0; i < 8; i++){
         (rng::genRandDouble(0.0, 1.0) > 0.5) ? rules[i] = CA_TRUE : rules[i] = CA_FALSE;
     }
 }
 
-CellularAutomata1D::CellularAutomata1D(char* rules){
+CellularAutomata1D::CellularAutomata1D(char* rules) : rules(nullptr){
+    this->rules = new char[8];
     for(int i = 0; i < 8; i++){
         this->rules[i] = rules[i];
     }
 }
 
-CellularAutomata1D::CellularAutomata1D(const CellularAutomata1D & other){
+CellularAutomata1D::CellularAutomata1D(const CellularAutomata1D & other) : rules(nullptr){
+    this->rules = new char[8];
     for(int i = 0; i < 8; i++){
         rules[i] = other.rules[i];
     }
@@ -25,6 +32,10 @@ CellularAutomata1D::CellularAutomata1D(const CellularAutomata1D & other){
 CellularAutomata1D& CellularAutomata1D::operator=(const CellularAutomata1D & other){
     // Check for self-assigment
     if(this != &other){
+        if(!rules){
+            this->rules = new char[8];
+        }
+
         for(int i = 0; i < 8; i++){
             rules[i] = other.rules[i];
         }
@@ -37,6 +48,31 @@ CellularAutomata1D::~CellularAutomata1D(){
 }
 
 //---------- UTILITIES ----------
+void CellularAutomata1D::step(bool*& curr, int domainSize){
+    // Rule to apply for the current neighborhood of points
+    int ruleVal;
+    // The end result of applying the rules
+    bool* next = new bool[domainSize];
+
+    // Left side
+    ruleVal = curr[domainSize - 1] * 4 + curr[0] * 2 + curr[1];
+    next[0] = rules[ruleVal] == CA_TRUE;
+    
+    // Internals
+    for(int i = 1; i < domainSize - 1; i++){
+        ruleVal = curr[i - 1] * 4 + curr[i] * 2 + curr[i + 1];
+        next[i] = rules[ruleVal] == CA_TRUE;
+    }
+
+    // Right side
+    ruleVal = curr[domainSize - 2] * 4 + curr[domainSize - 1] * 2 + curr[0];
+    next[domainSize - 1] = rules[ruleVal] == CA_TRUE;
+
+    // Pointer shuffle
+    delete[](curr);
+    curr = next;
+}
+
 bool** CellularAutomata1D::simulate(bool* start, int domainSize, int numSteps){
     // Create the output domain
     bool** output = new bool*[numSteps + 1];
@@ -67,21 +103,18 @@ bool** CellularAutomata1D::simulate(bool* start, int domainSize, int numSteps){
     return output;
 }
 
-int CellularAutomata1D::majority(bool* start, int domainSize, int maxSteps){
-    // create a local copy of the starting point
-    bool* curr = new bool[domainSize];
-    
+int CellularAutomata1D::majority(bool*& start, int domainSize, int maxSteps){
     // Simulate for either the maximum number of steps or until the domain has stabilized into all on or off
     int currStep = 0;
     bool done = false;
     while(!done && currStep < maxSteps){
         // Perform a step
-        step(curr, domainSize);
+        step(start, domainSize);
         
         // Check if done
         done = true;
         for(int i = 0; i < domainSize - 1 && done; i++){
-            if(curr[i] != curr[i + 1]){
+            if(start[i] != start[i + 1]){
                 done  = false;
             }
         }
@@ -94,33 +127,8 @@ int CellularAutomata1D::majority(bool* start, int domainSize, int maxSteps){
     if(!done && currStep < maxSteps){
         return -1;
     } else {
-        return curr[0];
+        return start[0];
     }
-}
-
-void CellularAutomata1D::step(bool* curr, int domainSize){
-    // Rule to apply for the current neighborhood of points
-    int ruleVal;
-    // The end result of applying the rules
-    bool* next = new bool[domainSize];
-
-    // Left side
-    ruleVal = curr[domainSize - 1] * 4 + curr[0] * 2 + curr[1];
-    next[0] = rules[ruleVal] == CA_TRUE;
-    
-    // Internals
-    for(int i = 1; i < domainSize - 1; i++){
-        ruleVal = curr[i - 1] * 4 + curr[i] * 2 + curr[i + 1];
-        next[i] = rules[ruleVal] == CA_TRUE;
-    }
-
-    // Right side
-    ruleVal = curr[domainSize - 2] * 4 + curr[domainSize - 1] * 2 + curr[0];
-    next[domainSize - 1] = rules[ruleVal] == CA_TRUE;
-
-    // Pointer shuffle
-    delete[](curr);
-    curr = next;
 }
 
 //---------- MUTATORS ----------
@@ -131,11 +139,12 @@ void CellularAutomata1D::setRules(char* newRules){
 }
 
 void CellularAutomata1D::snapShot(bool* start, int domainSize, int numSteps){
-    // TODO
-}
+    // Generate the data
+    bool** data = simulate(start, domainSize, numSteps);
 
-void CellularAutomata1D::snapShot(int rows, int cols, bool** results){
-    // TODO
+    // Draw the snapshot
+    SDLPixelGridRenderer pixelRenderer = SDLPixelGridRenderer("1D Cellular Automata", numSteps + 1, domainSize, CA_FALSE_COLOR, CA_GRID_LINES, CA_TRUE_COLOR);
+    pixelRenderer.drawBoolGrid(data, false, "");
 }
 
 //---------------------------------------- MajoritySolverGA ----------------------------------------
@@ -147,49 +156,88 @@ double MajoritySolverGA::fitness(int member){
     // Randomly generate bit strings and evaluate
     double fitness = (double) numFitnessTests;
     // The bit string to test the cellular automata on
-    bool start[domainSize];
-    // The total count of true in the domain
-    int total;
-    // The value for the majority (1 or 0)
-    int majority;
-    // The result of running the majority algorithm
+    bool* start = new bool[domainSize];
+    // Count of initial trueValues
+    int totalTrue;
+    // The majority value
+    bool majority;
+    // The value returned by majority
     int eval;
+    // Current number of true values
+    int currTrue;
+
 
     // Attempt to classify the random starting points
     for(int i = 0; i < numFitnessTests; i++){
+        totalTrue = 0;
         // Generate a random starting point
-        total = 0;
         for(int j = 0; j < domainSize; j++){
             if(rng::genRandDouble(0.0, 1.0) > 0.5){
                 start[j] = true;
-                total++;
+                totalTrue++;
             } else {
                 start[j] = false;
             }
         }
-        if(total > domainSize / 2){
-            majority = 1;
-        } else {
-            majority = 0;
-        }
+        // Evaluate which is the majority
+        majority = totalTrue >= domainSize / 2 ? true : false;
 
-        // Attempt to find the majority
+        // Apply the rules
         eval = currAutomata.majority(start, domainSize, maxSteps);
-        if(eval < 0){
-            fitness -= 1.;
-        } else if(eval == majority){
-            fitness += 1.;
+
+        // Calculate the fitness for this trial
+        if(eval >= 0){
+            if(majority == start[0]){
+                // Got the correct result
+                fitness += domainSize;
+            } else {
+                // Got the opposite result it should have
+                fitness += 0;
+            }    
+        } else {
+            // Calculate the fitness update otherwise
+            currTrue = 0;
+            for(int i = 0; i < domainSize; i++){
+                currTrue += start[i];
+            }
+            fitness += (majority ? currTrue : (domainSize - currTrue));
         }
     }
 
-    return fitness;
+    // Clean up
+    delete[](start);
+
+    // Return the fitness value
+    return fitness / ((double) numFitnessTests);
 }
+
+//---------- UTILITIES ----------
+void MajoritySolverGA::animateMember(int member){
+    // TODO
+}
+
+//-----------------------------------------------------------------------------------------------------------
+//---------------------------------------- WrapInt ----------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------
+//---------- CONSTRUCTORS ----------
+WrapInt::WrapInt() : currVal(0), max(0){}
+
+//---------- OPERATIONS ----------
+void WrapInt::wrapVal() {
+    if(currVal >= max){
+        currVal = currVal % max;
+    } else if(currVal < 0){
+        currVal -= ((currVal / max) - 1) * max;
+        currVal = currVal % max;
+    }
+}
+
 
 //-----------------------------------------------------------------------------------------------------------
 //---------------------------------------- CellularAutomata1DGeneral ----------------------------------------
 //-----------------------------------------------------------------------------------------------------------
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
-CellularAutomata1DGeneral::CellularAutomata1DGeneral() {
+CellularAutomata1DGeneral::CellularAutomata1DGeneral() : neighborCount(0), numRules(0), rules(nullptr) {
     // Count of the neighbors in each direction - default is k = 1
     neighborCount = 1;
     // The total number of rules
@@ -205,49 +253,179 @@ CellularAutomata1DGeneral::CellularAutomata1DGeneral() {
     }
 }
 
-CellularAutomata1DGeneral::CellularAutomata1DGeneral(int neighborCount, int numRules, char* rules){
-    // TODO
+CellularAutomata1DGeneral::CellularAutomata1DGeneral(int neighborCount) : neighborCount(neighborCount), numRules(0), rules(nullptr) {
+    // The total number of rules
+    numRules = 2;
+    for(int i = 0; i < 2 * neighborCount; i++){
+        numRules *= 2;
+    }
+
+    // Randomly select rules based on coin flip
+    this->rules = new char[numRules];
+    for(int i = 0; i < numRules; i++){
+        (rng::genRandDouble(0.0, 1.0) > 0.5) ? rules[i] = CA_TRUE : rules[i] = CA_FALSE;
+    }
 }
 
-CellularAutomata1DGeneral::CellularAutomata1DGeneral(const CellularAutomata1DGeneral & other){
-    // TODO
+CellularAutomata1DGeneral::CellularAutomata1DGeneral(int neighborCount, char* rules) : neighborCount(neighborCount), numRules(0), rules(nullptr){
+    // The total number of rules
+    numRules = 2;
+    for(int i = 0; i < 2 * neighborCount; i++){
+        numRules *= 2;
+    }
+
+    // Copy the provided rules
+    this->rules = new char[numRules];
+    for(int i = 0; i < numRules; i++){
+        this->rules[i] = rules[i];
+    }
+}
+
+CellularAutomata1DGeneral::CellularAutomata1DGeneral(const CellularAutomata1DGeneral & other) : neighborCount(other.neighborCount), numRules(other.numRules), rules(nullptr){
+    // Copy the provided rules
+    this->rules = new char[numRules];
+    for(int i = 0; i < numRules; i++){
+        this->rules[i] = other.rules[i];
+    }
 }
 
 CellularAutomata1DGeneral& CellularAutomata1DGeneral::operator=(const CellularAutomata1DGeneral & other){
-    // TODO
+    // Check for self assignment
+    if(this != &other){
+        // Clean up old rules
+        if(rules){
+            delete[](rules);
+            rules = nullptr;
+        }
+
+        // Set other values
+        neighborCount = other.neighborCount;
+        numRules = other.numRules;
+
+        // Copy the rules
+        rules = new char[numRules];
+        for(int i = 0; i < numRules; i++){
+            rules[i] = other.rules[i];
+        }
+    }
     return *this;
 }
 
 CellularAutomata1DGeneral::~CellularAutomata1DGeneral(){
-    // TODO
+    if(rules){
+        delete[](rules);
+        rules = nullptr;
+    }
 }
 
 //---------- UTILITIES ----------
+void CellularAutomata1DGeneral::step(bool*& curr, int domainSize){
+    // Rule to apply for the current neighborhood of points
+    int ruleVal;
+    // The current multiplier
+    int currMult;
+    // The end result of applying the rules
+    bool* next = new bool[domainSize];
+
+    // Create a wrapping index value
+    WrapInt wrapIndex = WrapInt();
+    wrapIndex.max = domainSize;
+    
+    // Update all values
+    for(int i = 0; i < domainSize; i++){
+        // Initial value
+        wrapIndex.currVal = i + neighborCount;
+        wrapIndex.wrapVal();
+
+        // Calculate the local rule value to use
+        ruleVal = 0;
+        currMult = 1;
+        for(int j = 0; j < 2 * neighborCount + 1; j++){
+            ruleVal += currMult * curr[wrapIndex.currVal];
+            currMult *= 2;
+            wrapIndex.currVal -= 1;
+            wrapIndex.wrapVal();
+        }
+        next[i] = rules[ruleVal] == CA_TRUE;
+    }
+
+    // Pointer shuffle
+    delete[](curr);
+    curr = next;
+}
+
 bool** CellularAutomata1DGeneral::simulate(bool* start, int domainSize, int numSteps){
-    // TODO
-    return nullptr;
+    // Create the output domain
+    bool** output = new bool*[numSteps + 1];
+    for(int i = 0; i < numSteps + 1; i++){
+        output[i] = new bool[domainSize];
+    }
+
+    // Copy the start into the output
+    for(int i = 0; i < domainSize; i++){
+        output[0][i] = start[i];
+    }
+
+    // Run simulation for all steps
+    int countSteps = 0;
+    while(countSteps < numSteps){
+        // Copy the previous step
+        for(int i = 0; i < domainSize; i++){
+            output[countSteps + 1][i] = output[countSteps][i];
+        }
+
+        // Run a step
+        step(output[countSteps + 1], domainSize);
+
+        // Increment
+        countSteps++;
+    }
+
+    return output;
 }
 
-int CellularAutomata1DGeneral::majority(bool* start, int domainSize, int maxSteps){
-    // TODO
-    return -1;
-}
+int CellularAutomata1DGeneral::majority(bool*& start, int domainSize, int maxSteps){
+    // Simulate for either the maximum number of steps or until the domain has stabilized into all on or off
+    int currStep = 0;
+    bool done = false;
+    while(!done && currStep < maxSteps){
+        // Perform a step
+        step(start, domainSize);
+        
+        // Check if done
+        done = true;
+        for(int i = 0; i < domainSize - 1 && done; i++){
+            if(start[i] != start[i + 1]){
+                done  = false;
+            }
+        }
 
-void CellularAutomata1DGeneral::step(bool* curr, int domainSize){
-    // TODO
+        // Increment
+        currStep++;
+    }
+
+    // Check if algorithm completed
+    if(!done && currStep < maxSteps){
+        return -1;
+    } else {
+        return start[0];
+    }
 }
 
 //---------- MUTATORS ----------
 void CellularAutomata1DGeneral::setRules(char* newRules){
-    // TODO
+    for(int i = 0; i < numRules; i++){
+        rules[i] = newRules[i];
+    }
 }
 
 //---------- GRAPHICAL REPRESENTATION ----------
 // Create an image of the final result of the rule as applied to the start
 void CellularAutomata1DGeneral::snapShot(bool* start, int domainSize, int numSteps){
-    // TODO
-}
+    // Generate the data
+    bool** data = simulate(start, domainSize, numSteps);
 
-void CellularAutomata1DGeneral::snapShot(int rows, int cols, bool** results){
-    // TODO
+    // Draw the snapshot
+    SDLPixelGridRenderer pixelRenderer = SDLPixelGridRenderer("General 1D Cellular Automata", numSteps + 1, domainSize, CA_FALSE_COLOR, CA_GRID_LINES, CA_TRUE_COLOR);
+    pixelRenderer.drawBoolGrid(data, false, "");
 }

@@ -6,12 +6,12 @@
 #include <stdio.h>
 #include <string>
 
-// TODO - pass strings by const reference
-// TODO - deep copying
-// TODO - shared pointers
-// TODO - more sophisticated text handling
-
-// TODO - implement scrollColorGrid
+// Stretch goals:
+// TODO - pass strings by const reference?
+// TODO - deep copying?
+// TODO - shared pointers?
+// TODO - more sophisticated text handling?
+// TODO - refactor repeated code
 
 // Default Screen Sizes
 const int DEFAULT_SCREEN_WIDTH = 640;
@@ -183,6 +183,7 @@ class SDLPixelGridRenderer {
         SDLPixelGridRenderer();
         SDLPixelGridRenderer(std::string title, int rows, int cols);
         SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color gridColor);
+        SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color falseColor, SDL_Color gridColor, SDL_Color trueColor);
         SDLPixelGridRenderer(const SDLPixelGridRenderer& other);
         SDLPixelGridRenderer& operator=(const SDLPixelGridRenderer& other);
         ~SDLPixelGridRenderer();

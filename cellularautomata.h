@@ -1,11 +1,9 @@
 #ifndef CELLULAR_AUTOMATA_H
 #define CELLULAR_AUTOMATA_H
 
-#include "geneticsolver.h"
-#include "sdl-basics.h"
+#include <SDL2/SDL.h>
 
-// TODO - modify to use character arrays instead of bools for the evaluation of the rules
-// TODO - create graphical representations of the results of processing the rules
+#include "geneticsolver.h"
 
 // Goal: Use cellular automata and genetic algorithms to determine if a bit string is majority on
 // -> If a given bit string has majority on then the result should be all on, otherwise the result should be all off
@@ -22,7 +20,7 @@ const SDL_Color CA_FALSE_COLOR = {255, 255, 255, 255};
 // Color for the grid line
 const SDL_Color CA_GRID_LINES = {150, 150, 150, 255};
 // Color for the tiles that are labeled false
-const SDL_Color CA_TRUE_COLOR = {255, 234, 0, 255};
+const SDL_Color CA_TRUE_COLOR = {0, 0, 0, 255};
 
 // Uses the classic 1D cellular automata definition where the bit and it's immediate neighbors determines it's value at the next step
 // Uses a toroidal (i.e. wrap around) domain for the boundary values of the bit string
@@ -36,32 +34,39 @@ class CellularAutomata1D{
         ~CellularAutomata1D();
 
         //---------- UTILITIES ----------
+        // Updates the current domain based on the rules
+        void step(bool*& curr, int domainSize);
         // Simulates the domain for the number of steps, returning an array of all of the results
         bool** simulate(bool* start, int domainSize, int numSteps);
-        // Attempts to solve the majority on/off problem - if no conclusion is reached returns -1
-        int majority(bool* start, int domainSize, int maxSteps);
-        // Updates the current domain based on the rules
-        void step(bool* curr, int domainSize);
-
+        // Attempts to solve the majority on/off problem with the given rule
+        // If no conclusion is reached returns -1, otherwise returns the majority
+        // Modifies the start array to allow for the user to see the final result
+        int majority(bool*& start, int domainSize, int maxSteps);
+        
         //---------- MUTATORS ----------
         void setRules(char* newRules);
 
         //---------- GRAPHICAL REPRESENTATION ----------
         // Create an image of the final result of the rule as applied to the start
         void snapShot(bool* start, int domainSize, int numSteps);
-        void snapShot(int rows, int cols, bool** results);
     private:
         // The rules for simulation
-        char rules[8];
+        char* rules;
 };
 
 // TODO - Constructors with parent class
-// TODO - fitness function might be a bad metric
-//  - alternative : for majority 1 - fitness is the count of 1s, for majority 0 - fitness is the count of 0s - possibly rewrite the majority function with this in mind
+// TODO - scrath memory? Save some news and deletes in the fitness function?
+
+// Majority Solver Genetic Algorithm
+// Uses a genetic algotihm to solve the basic nearest neighbor domain cell automata in a periodic domain
+// Fitness is the average number of values that match the majority over a pre-specified number of tests. The majority calculation is allowed to run for a pre-specified number of steps before concluding
 class MajoritySolverGA : public GeneticAlgorithm {
     public:
         //---------- GENETIC ALGORITHM FUNCTIONS ----------
         double fitness(int member);
+
+        //---------- UTILITIES ----------
+        void animateMember(int member);
     private:
         // Cellular Automata framework for evaluating the fitness
         CellularAutomata1D currAutomata;
@@ -73,23 +78,42 @@ class MajoritySolverGA : public GeneticAlgorithm {
         int maxSteps;
 };
 
+// Super basic integer that is meant to be positive and wrap around if it exceeds the maximum value
+// TODO - currently Hacky solution - operator overloading? 
+class WrapInt {
+    public:
+        //---------- CONSTRUCTORS ----------
+        WrapInt();
+
+        //---------- PUBLIC MEMBERS ----------
+        int currVal;
+        int max;
+
+        //---------- OPERATIONS ----------
+        void wrapVal();
+};
+
 // Generalizes the above concept, where instead of just the most immediate left and right neighbor, considers some k neighbors in each direction (k = 1 is the above case)
+// TODO - inheritance?
 class CellularAutomata1DGeneral{
     public:
         //---------- CONSTRUCTORS & DESTRUCTOR ----------
         CellularAutomata1DGeneral();
-        CellularAutomata1DGeneral(int neighborCount, int numRules, char* rules);
+        CellularAutomata1DGeneral(int neighborCount);
+        CellularAutomata1DGeneral(int neighborCount, char* rules);
         CellularAutomata1DGeneral(const CellularAutomata1DGeneral & other);
         CellularAutomata1DGeneral& operator=(const CellularAutomata1DGeneral & other);
         ~CellularAutomata1DGeneral();
 
         //---------- UTILITIES ----------
+        // Updates the current domain based on the rules
+        void step(bool*& curr, int domainSize);
         // Simulates the domain for the number of steps, returning an array of all of the results
         bool** simulate(bool* start, int domainSize, int numSteps);
-        // Attempts to solve the majority on/off problem
-        int majority(bool* start, int domainSize, int maxSteps);
-        // Updates the current domain based on the rules
-        void step(bool* curr, int domainSize);
+        // Attempts to solve the majority on/off problem with the given rule
+        // If no conclusion is reached returns -1, otherwise returns the majority
+        // Modifies the start array to allow for the user to see the final result
+        int majority(bool*& start, int domainSize, int maxSteps);
 
         //---------- MUTATORS ----------
         void setRules(char* newRules);
@@ -97,7 +121,6 @@ class CellularAutomata1DGeneral{
         //---------- GRAPHICAL REPRESENTATION ----------
         // Create an image of the final result of the rule as applied to the start
         void snapShot(bool* start, int domainSize, int numSteps);
-        void snapShot(int rows, int cols, bool** results);
     private:
         // The number of neighbhors to consider in the rule
         int neighborCount;

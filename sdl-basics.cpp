@@ -440,6 +440,25 @@ SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols
     SDL_SetRenderTarget(renderer, NULL);
 }
 
+SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color falseColor, SDL_Color gridColor, SDL_Color trueColor) : rows(rows), cols(cols), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(falseColor), gridLineColor(gridColor), trueColor(trueColor) {
+    // Calculate the window width and height
+    int windowWidth = cols * (pixelSize + 1) - 1;
+    int windowHeight = rows * (pixelSize + 1) - 1;
+
+    // Create the window
+    window = new SDLWindowWrapper(windowWidth, windowHeight, title);
+
+    // Pull out the renderer
+    renderer = window->getRenderer();
+
+    // Create the texture for the background
+    background.createBlankTexture(renderer, window->getWindowPixelFormat(), windowWidth, windowHeight);
+    drawBackground();
+
+    // Reset the renderer
+    SDL_SetRenderTarget(renderer, NULL);
+}
+
 SDLPixelGridRenderer::SDLPixelGridRenderer(const SDLPixelGridRenderer& other){
     // TODO
 }
