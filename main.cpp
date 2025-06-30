@@ -627,7 +627,7 @@ void testOptions(int testFlag){
             test_animateBoolGrid(); // PASSED
             break;
         case 5:
-            test_scrollBoolGrid();  // PASSED - ALL DIRECTIONS
+            test_scrollBoolGrid();  // PASSED
             break;
         case 6:
             test_scrollColorGrid(); // PASSED 
@@ -639,10 +639,10 @@ void testOptions(int testFlag){
             test_cellularAutomata1D();  // PASSED
             break;
         case 9:
-            test_cellularAutomata1DGeneral(); // FAILED
+            test_cellularAutomata1DGeneral(); // PASSED
             break;
         case 10:
-            test_WrapInt();
+            test_WrapInt(); // PASSED
             break;
         default:
             cerr << "Invalid testing code. See help menu (-h)\n";
