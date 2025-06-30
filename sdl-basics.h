@@ -43,6 +43,7 @@ class SDLWindowWrapper {
         SDL_Renderer* getRenderer();
         int getWidth();
         int getHeight();
+        Uint32 getWindowPixelFormat();
     private:
         //---------- STATIC PRIVATE MEMBERS ----------
         // Count of instances of the class using the SDL Library
@@ -103,8 +104,10 @@ class SDLTextureWrapper {
         void setBlendMode(SDL_BlendMode blending);
         // Create a textuyre for some text
         bool createTextTexture(SDL_Renderer* renderer, TTF_Font* font, std::string text, SDL_Color& color);
+        // Create a blank texture
+        void createBlankTexture(SDL_Renderer* renderer, Uint32 pixelFormat, int width, int height);
         // Render to this texture
-        friend void renderToTexture(SDL_Renderer* renderer, SDLTextureWrapper& textureWrapper);
+        void setAsRenderTarget(SDL_Renderer* renderer);
 
         //---------- ACCESSORS ----------
         int getWidth();

@@ -80,6 +80,23 @@ void SDLWindowWrapper::saveImg(std::string path){
     SDL_FreeSurface(saveSurface);
 }
 
+//---------- ACCESSORS ----------
+int SDLWindowWrapper::getSDLInitCount(){
+    return SDL_INIT_COUNT;
+}
+
+int SDLWindowWrapper::getIMGInitCount(){
+    return IMG_INIT_COUNT;
+}
+
+int SDLWindowWrapper::getTTFInitCount(){
+    return TTF_INIT_COUNT;
+}
+
+int SDLWindowWrapper::getMixerInitCount(){
+    return MIX_INIT_COUNT;
+}
+
 SDL_Renderer* SDLWindowWrapper::getRenderer(){
     return renderer;
 }
@@ -90,6 +107,10 @@ int SDLWindowWrapper::getWidth(){
 
 int SDLWindowWrapper::getHeight(){
     return screenHeight;
+}
+
+Uint32 SDLWindowWrapper::getWindowPixelFormat(){
+    return SDL_GetWindowPixelFormat(window);
 }
 
 //---------- PRIVATE UTILITIES ----------
@@ -287,27 +308,21 @@ bool SDLTextureWrapper::createTextTexture(SDL_Renderer* renderer, TTF_Font* font
     return success;
 }
 
-void renderToTexture(SDL_Renderer* renderer, SDLTextureWrapper& textureWrapper){
-    SDL_SetRenderTarget(renderer, textureWrapper.texture);
+void SDLTextureWrapper::createBlankTexture(SDL_Renderer* renderer, Uint32 pixelFormat, int width, int height){
+    // Create the texture
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    texture = SDL_CreateTexture(renderer, pixelFormat, SDL_TEXTUREACCESS_TARGET, width, height);
+
+    // Set the height
+    this->width = width;
+    this->height = height;
+}
+
+void SDLTextureWrapper::setAsRenderTarget(SDL_Renderer* renderer){
+    SDL_SetRenderTarget(renderer, texture);
 }
 
 //---------- ACCESSORS ----------
-int SDLWindowWrapper::getSDLInitCount(){
-    return SDL_INIT_COUNT;
-}
-
-int SDLWindowWrapper::getIMGInitCount(){
-    return IMG_INIT_COUNT;
-}
-
-int SDLWindowWrapper::getTTFInitCount(){
-    return TTF_INIT_COUNT;
-}
-
-int SDLWindowWrapper::getMixerInitCount(){
-    return MIX_INIT_COUNT;
-}
-
 int SDLTextureWrapper::getWidth(){
     return width;
 }
@@ -393,12 +408,13 @@ SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols
     int windowHeight = rows * (pixelSize + 1) - 1;
 
     // Create the window
-    window = new SDLWindowWrapper(windowWidth, windowHeight, "Pixel Grid");
+    window = new SDLWindowWrapper(windowWidth, windowHeight, title);
 
     // Pull out the renderer
     renderer = window->getRenderer();
 
     // Create the texture for the background
+    background.createBlankTexture(renderer, window->getWindowPixelFormat(), windowWidth, windowHeight);
     drawBackground();
 
     // Reset the renderer
@@ -431,7 +447,7 @@ void SDLPixelGridRenderer::drawBoolGrid(bool** data, bool saveOutput, std::strin
     std::string outputFilename;
 
 
-        // Render the background
+    // Render the background
     background.render(renderer, 0, 0);
 
     // Render the "on" tiles
@@ -482,50 +498,48 @@ void SDLPixelGridRenderer::animateBoolGrid(bool*** data, int frameCount, int fra
     int currTicks;
 
     // Create all frames
-    for(int k = 0; k < frameCount; k++){
-        while(!quit){
-            // Start the fps timer
-            fpsTimer.start();
+    for(int k = 0; k < frameCount && !quit; k++){
+        // Start the fps timer
+        fpsTimer.start();
 
-            // Poll events to enable the exit out button
-            while( SDL_PollEvent( &e ) ){
-                if( e.type == SDL_QUIT ){
-                    quit = true;
+        // Poll events to enable the exit out button
+        while( SDL_PollEvent( &e ) ){
+            if( e.type == SDL_QUIT ){
+                quit = true;
+            }
+        }
+
+        // Render the background
+        background.render(renderer, 0, 0);
+
+        // Render the "on" tiles
+        SDL_SetRenderDrawColor(renderer, trueColor);
+        for(int i = 0; i < rows; i++){
+            fillRect.y = i * (pixelSize + 1);
+            for(int j = 0; j < cols; j++){
+                fillRect.x = j * (pixelSize + 1);
+                if(data[k][i][j]){
+                    SDL_RenderFillRect(renderer, &fillRect);
                 }
             }
+        }
 
-            // Render the background
-            background.render(renderer, 0, 0);
+        // Save the current frame
+        if(saveOutput){
+            filenameMaker << path << k << ".png";
+            outputFilename = filenameMaker.str();
+            filenameMaker.str();
+            window->saveImg(outputFilename);
+        }
 
-            // Render the "on" tiles
-            SDL_SetRenderDrawColor(renderer, trueColor);
-            for(int i = 0; i < rows; i++){
-                fillRect.y = i * (pixelSize + 1);
-                for(int j = 0; j < cols; j++){
-                    fillRect.x = j * (pixelSize + 1);
-                    if(data[k][i][j]){
-                        SDL_RenderFillRect(renderer, &fillRect);
-                    }
-                }
-            }
+        // Update the screen
+        SDL_RenderPresent(renderer);
 
-            // Save the current frame
-            if(saveOutput){
-                filenameMaker << path << k << ".png";
-                outputFilename = filenameMaker.str();
-                filenameMaker.str();
-                window->saveImg(outputFilename);
-            }
-
-            // Update the screen
-            SDL_RenderPresent(renderer);
-
-            // Check the ticks
-            currTicks = fpsTimer.getTicks();
-            if(currTicks < ticksPerFrame){
-                // Wait remaining time
-                SDL_Delay(ticksPerFrame - currTicks);
-            }
+        // Check the ticks
+        currTicks = fpsTimer.getTicks();
+        if(currTicks < ticksPerFrame){
+            // Wait remaining time
+            SDL_Delay(ticksPerFrame - currTicks);
         }
     }
 }
@@ -701,7 +715,7 @@ void SDLPixelGridRenderer::drawBackground(){
     int windowHeight = rows * (pixelSize + 1) - 1;
 
     // Create the texture for the background
-    renderToTexture(renderer, background);
+    background.setAsRenderTarget(renderer);
 
     // Make the background
     // Clear the renderer
@@ -725,6 +739,9 @@ void SDLPixelGridRenderer::drawBackground(){
             (pixelSize + 1) * (i + 1) - 1, windowHeight
         );
     }
+
+    // Render to the texture
+    SDL_RenderPresent(renderer);
 
     // Reset the renderer
     SDL_SetRenderTarget(renderer, NULL);

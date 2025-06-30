@@ -40,7 +40,7 @@ const int GOLS_FPS = 5;
 const int GOLS_TICKS_PER_FRAME = 1000 / GOLS_FPS;
 
 // Debugging function
-//cerr << "DEBUG: " << __FILE__ << " line " << __LINE__ << "\n";
+//std::cerr << "DEBUG: " << __FILE__ << " line " << __LINE__ << "\n";
 
 // Creating the video in ffmpeg
 //ffmpeg -f image2 -framerate 5 -i frame%d.png -vcodec libx264 -crf 22 video.mp4
@@ -435,7 +435,7 @@ void test_animateBoolGrid(){
     }
     
     // Animate
-    SDLPixelGridRenderer test = SDLPixelGridRenderer("Test Single Frame", rows, cols);
+    SDLPixelGridRenderer test = SDLPixelGridRenderer("Test Animated", rows, cols);
     test.animateBoolGrid(grid, frames, frameRate, false, "");
 
     // Cleanup
@@ -475,7 +475,7 @@ void test_scrollBoolGrid(){
     }
 
     // Scroll
-    SDLPixelGridRenderer test = SDLPixelGridRenderer("Test Single Frame", rows, cols);
+    SDLPixelGridRenderer test = SDLPixelGridRenderer("Test Scrolling", rows, cols);
     test.scrollBoolGrid(pixelArt, frameCount, frameRate, ScrollDirection::LEFT, false, "");
 
     // Clean up
@@ -525,7 +525,7 @@ void printHelpMenu(){
     cerr << "\t\t2 - test basic animated organism - \"glider\"\n";
     cerr << "\t\t3 - test pixel grid single frame code\n";
     cerr << "\t\t4 - test pixel grid animation code\n";
-    cerr << "\r\t5 - test scrolling boolean pixel art code.\n";
+    cerr << "\t\t5 - test scrolling boolean pixel art code.\n";
     cerr << "\r\t6 - test scrolling color pixel art code.\n";
     cerr << "\t\t7 - test code for the GameOfLife class.\n";
     // Run code
@@ -546,16 +546,16 @@ void testOptions(int testFlag){
             test_glider();  // PASSED
             break;
         case 3:
-            test_drawBoolGrid();
+            test_drawBoolGrid(); // PASSED
             break;
         case 4:
-            test_animateBoolGrid();
+            test_animateBoolGrid(); // FAILED
             break;
         case 5:
-            test_scrollBoolGrid();
+            test_scrollBoolGrid();  // FAILED
             break;
         case 6:
-            test_scrollColorGrid();
+            test_scrollColorGrid(); // NOT IMPLEMENTED   
             break;
         case 7:
             test_GameOfLife();  // PASSED
