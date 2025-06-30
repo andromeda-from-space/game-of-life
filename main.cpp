@@ -13,6 +13,9 @@
 #include "geneticsolver.h"
 #include "gameoflife.h"
 
+// TODO - fix test functions
+// TODO - Test Pixel Grid Class
+
 //---------- TESTING FUNCTION CONSTANTS ----------
 // Default constants for the solver class
 // Directory to save the output into

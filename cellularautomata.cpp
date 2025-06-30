@@ -197,7 +197,9 @@ double MajoritySolverGA::fitness(int member){
     return fitness;
 }
 
+//-----------------------------------------------------------------------------------------------------------
 //---------------------------------------- CellularAutomata1DGeneral ----------------------------------------
+//-----------------------------------------------------------------------------------------------------------
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
 CellularAutomata1DGeneral::CellularAutomata1DGeneral() {
     // Count of the neighbors in each direction - default is k = 1
