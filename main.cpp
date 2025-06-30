@@ -13,7 +13,6 @@
 #include "geneticsolver.h"
 #include "gameoflife.h"
 
-// TODO - fix test functions
 // TODO - Test Pixel Grid Class
 
 //---------- TESTING FUNCTION CONSTANTS ----------
@@ -41,7 +40,7 @@ const int GOLS_FPS = 5;
 const int GOLS_TICKS_PER_FRAME = 1000 / GOLS_FPS;
 
 // Debugging function
-// cerr << "DEBUG: " << __FILE__ << " line " << __LINE__ << "\n";
+//cerr << "DEBUG: " << __FILE__ << " line " << __LINE__ << "\n";
 
 // Creating the video in ffmpeg
 //ffmpeg -f image2 -framerate 5 -i frame%d.png -vcodec libx264 -crf 22 video.mp4
@@ -350,7 +349,7 @@ void test_glider(){
     renderOrganism(gliderRows, gliderCols, glider, simRows, simCols, totFrames);
 }
 
-void test_drawPixelGrid_SingleFrame(){
+void test_drawBoolGrid(){
     // Initialize test data
     int rows = 7;
     int cols = 7;
@@ -370,9 +369,9 @@ void test_drawPixelGrid_SingleFrame(){
         }
     }
 
-    // Call drawPixelGrid
-    std::string title = "Test: Still";
-    drawPixelGrid(title, rows, cols, grid);
+    // Render the grid
+    SDLPixelGridRenderer test = SDLPixelGridRenderer("Test Single Frame", rows, cols);
+    test.drawBoolGrid(grid, false, "");
 
     // Clean up the grid
     for(int i = 0; i < rows; i++){
@@ -382,142 +381,118 @@ void test_drawPixelGrid_SingleFrame(){
     delete[](grid);
 }
 
-void test_drawPixelGrid_Animated(){
+void test_animateBoolGrid(){
     // Initialize test data
     int rows = 7;
     int cols = 7;
-    
-    // First Grid
-    bool** grid0 = new bool*[7];
-    for(int i = 0; i < rows; i++){
-        grid0[i] = new bool[7];
-        for(int j = 0; j < cols; j++){
-            if((i * cols + j) % 2 == 0){
-                grid0[i][j] = false;
-            } else {
-                grid0[i][j] = true;
-            }
-        }
-    }
-
-    // Second Grid
-    bool** grid1 = new bool*[7];
-    for(int i = 0; i < rows; i++){
-        grid1[i] = new bool[7];
-        for(int j = 0; j < cols; j++){
-            grid1[i][j] = false;
-        }
-    }
-
-    // Third Grid
-    bool** grid2 = new bool*[7];
-    for(int i = 0; i < rows; i++){
-        grid2[i] = new bool[7];
-        for(int j = 0; j < cols; j++){
-            if((i * cols + j) % 2 == 0){
-                grid2[i][j] = true;
-            } else {
-                grid2[i][j] = false;
-            }
-        }
-    }
-
-    // Call drawPixelGrid
-    std::string title = "Test: Animated";
-
-    // Save file name stufff
-    std::string* saveFilename = new std::string();;
-    std::string prefix = "video/frame";
-    std::string suffix = ".png";
-    std::stringstream saveFilenameMaker; 
-    saveFilenameMaker << prefix << 0 << suffix;
-    *saveFilename = saveFilenameMaker.str();
-
-    // Window
-    SDLWindowWrapper* window = nullptr;
-
-    // Frame rate
+    int frames = 12;
     int frameRate = 5;
-
-    // Background file name
-    std::string* backgroundFilename = new std::string();
-    *backgroundFilename = "temp_background.png";
     
-    // Make the first frame
-    drawPixelGrid(title, rows, cols, grid0, saveFilename, window, frameRate, nullptr, backgroundFilename);
+    // Make the grid
+    bool*** grid = new bool**[frames];
 
-    if(window){
-        cerr << "Pointer working as expected.";
-    } else {
-        cerr << "Not as expected - use a reference or change the spec.";
-    }
-
-    // Grab the renderer from the window
-    SDL_Renderer* renderer = window->getRenderer();
-
-    // Load the second background into a texture
-    SDLTextureWrapper* backgroundTexture = new SDLTextureWrapper();
-    backgroundTexture->loadFromFile(renderer, *backgroundFilename);
-
-    // The current grid
-    bool** currGrid;
-    int modVal;
-
-    // Loop for the video
-    for(int i = 0; i < 10; i++){
-        // Make a new file name
-        saveFilenameMaker.str(std::string());
-        saveFilenameMaker << prefix << i << suffix;
-        *saveFilename = saveFilenameMaker.str();
-
-        // Four frame cycle
-        modVal = i % 4;
-        if(modVal == 0){
-            currGrid = grid1;
-        } else if(modVal == 1){
-            currGrid = grid2;
-        } else if(modVal == 2){
-            currGrid = grid1;
-        } else{
-            currGrid = grid0;
+    // First frame
+    grid[0] = new bool*[7];
+    for(int i = 0; i < rows; i++){
+        grid[0][i] = new bool[7];
+        for(int j = 0; j < cols; j++){
+            if((i * cols + j) % 2 == 0){
+                grid[0][i][j] = false;
+            } else {
+                grid[0][i][j] = true;
+            }
         }
-
-        // Update the frames
-        cerr << "DEBUG: " << __FILE__ << " line " << __LINE__ << "\n";
-        drawPixelGrid(title, rows, cols, currGrid, saveFilename, window, frameRate, backgroundTexture, backgroundFilename);
     }
-    // The frame rate might get a little wonky, because enough of this is done independent of all the main loop. Might be worth encapsulating it into it's own class.
+
+    // Second frame
+    grid[1] = new bool*[7];
+    for(int i = 0; i < rows; i++){
+        grid[1][i] = new bool[7];
+        for(int j = 0; j < cols; j++){
+            grid[1][i][j] = false;
+        }
+    }
+
+    // Third frame
+    grid[2] = new bool*[7];
+    for(int i = 0; i < rows; i++){
+        grid[2][i] = new bool[7];
+        for(int j = 0; j < cols; j++){
+            if((i * cols + j) % 2 == 0){
+                grid[2][i][j] = true;
+            } else {
+                grid[2][i][j] = false;
+            }
+        }
+    }
+
+    // Fourth frame
+    grid[3] = grid[1];
+
+    // Repeat
+    for(int k = 3; k < frames; k++){
+        grid[k] = grid[k % 4]; 
+    }
+    
+    // Animate
+    SDLPixelGridRenderer test = SDLPixelGridRenderer("Test Single Frame", rows, cols);
+    test.animateBoolGrid(grid, frames, frameRate, false, "");
 
     // Cleanup
     // Delete the grids
     for(int i = 0; i < rows; i++){
-        delete[](grid0[i]);
-        grid0[0] = nullptr;
-        delete[](grid1[i]);
-        grid1[0] = nullptr;
-        delete[](grid2[i]);
-        grid2[0] = nullptr;
+        delete[](grid[0][i]);
+        grid[0][i] = nullptr;
+        delete[](grid[1][i]);
+        grid[1][i] = nullptr;
+        delete[](grid[2][i]);
+        grid[2][i] = nullptr;
     }
-    delete[](grid0);
-    delete[](grid1);
-    delete[](grid2);
-    
-    // Delete the background PNG
-    std::remove(backgroundFilename->c_str());
 
-    // Delete the strings
-    delete(backgroundFilename);
-    delete(saveFilename);
+    delete[](grid[0]);
+    grid[0] = nullptr;
+    delete[](grid[1]);
+    grid[1] = nullptr;
+    delete[](grid[2]);
+    grid[2] = nullptr;
 
-    // Delete the SDL data
-    delete(backgroundTexture);
-    delete(window);    
+    delete[](grid);
 }
 
-void test_scrolling(){
+void test_scrollBoolGrid(){
     // Generate the data
     int rows = 10;
     int cols = 10;
+    int frameCount = 20;
+    int frameRate = 5;
+
+    bool** pixelArt = new bool*[rows];
+    for(int i = 0; i < rows; i++){
+        pixelArt[i] = new bool[cols];
+        for(int j = 0; j < cols; j++){
+            pixelArt[i][j] = i >= j;
+        }
+    }
+
+    // Scroll
+    SDLPixelGridRenderer test = SDLPixelGridRenderer("Test Single Frame", rows, cols);
+    test.scrollBoolGrid(pixelArt, frameCount, frameRate, ScrollDirection::LEFT, false, "");
+
+    // Clean up
+    for(int i = 0; i < rows; i++){
+        delete[](pixelArt[i]);
+        pixelArt[i] = nullptr;
+    }
+    delete[](pixelArt);
+}
+
+void test_scrollColorGrid(){
+    // Generate the data
+    int rows = 10;
+    int cols = 10;
+    int frameCount = 20;
+    int frameRate = 5;
+
     SDL_Color** pixelArt = new SDL_Color*[rows];
     for(int i = 0; i < rows; i++){
         pixelArt[i] = new SDL_Color[cols];
@@ -527,7 +502,15 @@ void test_scrolling(){
     }
 
     // Scroll
-    scrolling(rows, cols, pixelArt);
+    SDLPixelGridRenderer test = SDLPixelGridRenderer("Test Single Frame", rows, cols);
+    test.scrollColorGrid(pixelArt, frameCount, frameRate, ScrollDirection::LEFT, false, "");
+
+    // Clean up
+    for(int i = 0; i < rows; i++){
+        delete[](pixelArt[i]);
+        pixelArt[i] = nullptr;
+    }
+    delete[](pixelArt);
 }
 
 //---------- COMMAND LINE ARGUMENT FUNCTIONS ----------
@@ -540,10 +523,11 @@ void printHelpMenu(){
     cerr << "\t\t0 - test \"pulsar\" in basic domain\n";
     cerr << "\t\t1 - test basic animated organism - still life \"square\"\n";
     cerr << "\t\t2 - test basic animated organism - \"glider\"\n";
-    cerr << "\t\t3 - test code for creating a single still image\n";
-    cerr << "\t\t4 - test code that wraps the animation as an example of how to use it efficiently\n";
-    cerr << "\t\t5 - test code for the GameOfLife class.\n";
-    cerr << "\r\t6 - test scrolling pixel art code.\n";
+    cerr << "\t\t3 - test pixel grid single frame code\n";
+    cerr << "\t\t4 - test pixel grid animation code\n";
+    cerr << "\r\t5 - test scrolling boolean pixel art code.\n";
+    cerr << "\r\t6 - test scrolling color pixel art code.\n";
+    cerr << "\t\t7 - test code for the GameOfLife class.\n";
     // Run code
     cerr << "\t-r # - experiment mode with options:\n";
     // TODO - update the help menu
@@ -562,19 +546,19 @@ void testOptions(int testFlag){
             test_glider();  // PASSED
             break;
         case 3:
-            test_drawPixelGrid_SingleFrame();   // PASSED
+            test_drawBoolGrid();
             break;
         case 4:
-            test_drawPixelGrid_Animated();
+            test_animateBoolGrid();
             break;
         case 5:
-            test_GameOfLife();  // PASSED
+            test_scrollBoolGrid();
             break;
         case 6:
-            test_scrolling();   // PASSED
+            test_scrollColorGrid();
             break;
         case 7:
-            cerr << "Not implemented\n";
+            test_GameOfLife();  // PASSED
             break;
         default:
             cerr << "Invalid testing code. See help menu (-h)\n";

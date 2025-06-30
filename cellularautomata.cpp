@@ -131,23 +131,11 @@ void CellularAutomata1D::setRules(char* newRules){
 }
 
 void CellularAutomata1D::snapShot(bool* start, int domainSize, int numSteps){
-    // Simulate the results
-    bool** results = simulate(start, domainSize, numSteps);
-
-    // Call the other snapshot function
-    snapShot(numSteps, domainSize, results);
-
-    // Clean up
-    for(int i = 0; i < numSteps; i++){
-        delete[](results[i]);
-        results[i] = nullptr;
-    }
-    delete[](results);
+    // TODO
 }
 
 void CellularAutomata1D::snapShot(int rows, int cols, bool** results){
-    std::string title = "1D Cellular Automata";
-    drawPixelGrid(title, rows, cols, results, nullptr);
+    // TODO
 }
 
 //---------------------------------------- MajoritySolverGA ----------------------------------------
@@ -250,6 +238,16 @@ void CellularAutomata1DGeneral::step(bool* curr, int domainSize){
 }
 
 //---------- MUTATORS ----------
-void setRules(char* newRules){
+void CellularAutomata1DGeneral::setRules(char* newRules){
+    // TODO
+}
 
+//---------- GRAPHICAL REPRESENTATION ----------
+// Create an image of the final result of the rule as applied to the start
+void CellularAutomata1DGeneral::snapShot(bool* start, int domainSize, int numSteps){
+    // TODO
+}
+
+void CellularAutomata1DGeneral::snapShot(int rows, int cols, bool** results){
+    // TODO
 }

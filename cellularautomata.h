@@ -96,8 +96,8 @@ class CellularAutomata1DGeneral{
 
         //---------- GRAPHICAL REPRESENTATION ----------
         // Create an image of the final result of the rule as applied to the start
-        void snapShot(SDLWindowWrapper & window, bool* start, int domainSize, int numSteps);
-        void snapShot(SDLWindowWrapper & window, int rows, int cols, bool** results);
+        void snapShot(bool* start, int domainSize, int numSteps);
+        void snapShot(int rows, int cols, bool** results);
     private:
         // The number of neighbhors to consider in the rule
         int neighborCount;

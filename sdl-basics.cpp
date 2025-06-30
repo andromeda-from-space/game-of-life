@@ -387,7 +387,7 @@ bool SDLTimer::isPaused(){
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
 SDLPixelGridRenderer::SDLPixelGridRenderer() : rows(-1), cols(-1), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(GRID_FALSE_COLOR), gridLineColor(GRID_LINES_COLOR), trueColor(GRID_TRUE_COLOR){}
 
-SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols, int frameRate = -1) : rows(rows), cols(cols), ticksPerFrame(1000 / frameRate), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(GRID_FALSE_COLOR), gridLineColor(GRID_LINES_COLOR), trueColor(GRID_TRUE_COLOR) {
+SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols) : rows(rows), cols(cols), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(GRID_FALSE_COLOR), gridLineColor(GRID_LINES_COLOR), trueColor(GRID_TRUE_COLOR) {
     // Calculate the window width and height
     int windowWidth = cols * (pixelSize + 1) - 1;
     int windowHeight = rows * (pixelSize + 1) - 1;
@@ -466,6 +466,9 @@ void SDLPixelGridRenderer::drawBoolGrid(bool** data, bool saveOutput, std::strin
 }
 
 void SDLPixelGridRenderer::animateBoolGrid(bool*** data, int frameCount, int frameRate, bool saveOutput, std::string path){
+    // Set ticks per frame
+    ticksPerFrame = 1000 / frameRate;
+
     // Flag to exit the window
     bool quit = false;
     // SDL Event to track if 'x' has been pressed
@@ -527,7 +530,10 @@ void SDLPixelGridRenderer::animateBoolGrid(bool*** data, int frameCount, int fra
     }
 }
 
-void SDLPixelGridRenderer::scrollBoolGrid(bool** data, int frameCount, ScrollDirection direction, bool saveOutput, std::string path){
+void SDLPixelGridRenderer::scrollBoolGrid(bool** data, int frameCount, int frameRate, ScrollDirection direction, bool saveOutput, std::string path){
+    // Set ticks per frame
+    ticksPerFrame = 1000 / frameRate;
+
     // Flag to exit the window
     bool quit = false;
     // SDL Event to track if 'x' has been pressed
@@ -663,6 +669,11 @@ void SDLPixelGridRenderer::scrollBoolGrid(bool** data, int frameCount, ScrollDir
         currFrame++;
     }
 }
+
+void SDLPixelGridRenderer::scrollColorGrid(SDL_Color** data, int frameCount, int frameRate, ScrollDirection direction, bool saveOutput, std::string path){
+    // TODO
+}
+
 
 //---------- MUTATORS ----------
 void SDLPixelGridRenderer::setFalseColor(SDL_Color newColor){

@@ -6,11 +6,12 @@
 #include <stdio.h>
 #include <string>
 
-// TODO - pass strings by reference
+// TODO - pass strings by const reference
 // TODO - deep copying
 // TODO - shared pointers
 // TODO - more sophisticated text handling
-// TODO - write a version of drawPixelGrid that takes a user defined struct for parameters to make setting default parameters less of a headache
+
+// TODO - implement scrollColorGrid
 
 // Default Screen Sizes
 const int DEFAULT_SCREEN_WIDTH = 640;
@@ -177,7 +178,7 @@ class SDLPixelGridRenderer {
     public:
         //---------- CONSTRUCTORS & DESTRUCTOR ----------
         SDLPixelGridRenderer();
-        SDLPixelGridRenderer(std::string title, int rows, int cols, int frameRate = -1);
+        SDLPixelGridRenderer(std::string title, int rows, int cols);
         SDLPixelGridRenderer(const SDLPixelGridRenderer& other);
         SDLPixelGridRenderer& operator=(const SDLPixelGridRenderer& other);
         ~SDLPixelGridRenderer();
@@ -189,7 +190,9 @@ class SDLPixelGridRenderer {
         // Animates provided data
         void animateBoolGrid(bool*** data, int frameCount, int frameRate, bool saveOutput, std::string path);
         // Scrolls the provided data in the direction provided
-        void scrollBoolGrid(bool** data, int frameCount, ScrollDirection direction, bool saveOutput, std::string path);
+        void scrollBoolGrid(bool** data, int frameCount, int frameRate, ScrollDirection direction, bool saveOutput, std::string path);
+        // Scrolls the provided data in the direction provided
+        void scrollColorGrid(SDL_Color** data, int frameCount, int frameRate, ScrollDirection direction, bool saveOutput, std::string path);
 
         //---------- MUTATORS ----------
         void setFalseColor(SDL_Color newColor);
