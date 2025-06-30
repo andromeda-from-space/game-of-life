@@ -182,6 +182,7 @@ class SDLPixelGridRenderer {
         //---------- CONSTRUCTORS & DESTRUCTOR ----------
         SDLPixelGridRenderer();
         SDLPixelGridRenderer(std::string title, int rows, int cols);
+        SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color gridColor);
         SDLPixelGridRenderer(const SDLPixelGridRenderer& other);
         SDLPixelGridRenderer& operator=(const SDLPixelGridRenderer& other);
         ~SDLPixelGridRenderer();

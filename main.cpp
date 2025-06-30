@@ -502,7 +502,7 @@ void test_scrollColorGrid(){
     }
 
     // Scroll
-    SDLPixelGridRenderer test = SDLPixelGridRenderer("Test Single Frame", rows, cols);
+    SDLPixelGridRenderer test = SDLPixelGridRenderer("Test Single Frame", rows, cols, {0, 0, 0, 255});
     test.scrollColorGrid(pixelArt, frameCount, frameRate, ScrollDirection::LEFT, false, "");
 
     // Clean up
@@ -549,13 +549,13 @@ void testOptions(int testFlag){
             test_drawBoolGrid(); // PASSED
             break;
         case 4:
-            test_animateBoolGrid(); // FAILED
+            test_animateBoolGrid(); // PASSED
             break;
         case 5:
-            test_scrollBoolGrid();  // FAILED
+            test_scrollBoolGrid();  // PASSED - ALL DIRECTIONS
             break;
         case 6:
-            test_scrollColorGrid(); // NOT IMPLEMENTED   
+            test_scrollColorGrid(); // UNTESTED 
             break;
         case 7:
             test_GameOfLife();  // PASSED

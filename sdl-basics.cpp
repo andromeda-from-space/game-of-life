@@ -421,6 +421,25 @@ SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols
     SDL_SetRenderTarget(renderer, NULL);
 }
 
+SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color gridColor) : rows(rows), cols(cols), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(GRID_FALSE_COLOR), gridLineColor(gridColor), trueColor(GRID_TRUE_COLOR) {
+    // Calculate the window width and height
+    int windowWidth = cols * (pixelSize + 1) - 1;
+    int windowHeight = rows * (pixelSize + 1) - 1;
+
+    // Create the window
+    window = new SDLWindowWrapper(windowWidth, windowHeight, title);
+
+    // Pull out the renderer
+    renderer = window->getRenderer();
+
+    // Create the texture for the background
+    background.createBlankTexture(renderer, window->getWindowPixelFormat(), windowWidth, windowHeight);
+    drawBackground();
+
+    // Reset the renderer
+    SDL_SetRenderTarget(renderer, NULL);
+}
+
 SDLPixelGridRenderer::SDLPixelGridRenderer(const SDLPixelGridRenderer& other){
     // TODO
 }
@@ -567,24 +586,24 @@ void SDLPixelGridRenderer::scrollBoolGrid(bool** data, int frameCount, int frame
     bool* temp;
     // Transpose the data if left to right for more efficient rendering
     if(direction == ScrollDirection::LEFT || direction == ScrollDirection::RIGHT){
-        bool** currData = new bool*[cols];
-        for(int j = 0; j < rows; j++){
-            currData = new bool*[rows];
-            for(int i = 0; j < cols; i++){
-                currData[i][j] = data[j][i];
+        currData = new bool*[cols];
+        for(int j = 0; j < cols; j++){
+            currData[j] = new bool[rows];
+            for(int i = 0; i < rows; i++){
+                currData[j][i] = data[i][j];
             }
         }
     } else {
         // Otherwise just copy the data
         currData = new bool*[rows];
         for(int i = 0; i < rows; i++){
-            currData = new bool*[cols];
+            currData[i] = new bool[cols];
             for(int j = 0; j < cols; j++){
                 currData[i][j] = data[i][j];
             }
         }
     }
-    
+
     // Create all frames
     while(!quit){
         // Start the fps timer
@@ -685,7 +704,140 @@ void SDLPixelGridRenderer::scrollBoolGrid(bool** data, int frameCount, int frame
 }
 
 void SDLPixelGridRenderer::scrollColorGrid(SDL_Color** data, int frameCount, int frameRate, ScrollDirection direction, bool saveOutput, std::string path){
-    // TODO
+    // Set ticks per frame
+    ticksPerFrame = 1000 / frameRate;
+
+    // Flag to exit the window
+    bool quit = false;
+    // SDL Event to track if 'x' has been pressed
+    SDL_Event e;
+    // Rectangle for filling the pixels
+    SDL_Rect fillRect = {0, 0, pixelSize, pixelSize};
+    // String stream to make unique file names
+    std::stringstream filenameMaker;
+    std::string outputFilename;
+    // The count of ticks since the previous frame
+    int currTicks;
+    // Current frame
+    int currFrame = 0;
+    // Current data to render
+    SDL_Color** currData;
+    // Temporary pointer for doing the pointer swap
+    SDL_Color* temp;
+    // Transpose the data if left to right for more efficient rendering
+    if(direction == ScrollDirection::LEFT || direction == ScrollDirection::RIGHT){
+        currData = new SDL_Color*[cols];
+        for(int j = 0; j < cols; j++){
+            currData[j] = new SDL_Color[rows];
+            for(int i = 0; i < rows; i++){
+                currData[j][i] = data[i][j];
+            }
+        }
+    } else {
+        // Otherwise just copy the data
+        currData = new SDL_Color*[rows];
+        for(int i = 0; i < rows; i++){
+            currData[i] = new SDL_Color[cols];
+            for(int j = 0; j < cols; j++){
+                currData[i][j] = data[i][j];
+            }
+        }
+    }
+
+    // Create all frames
+    while(!quit){
+        // Start the fps timer
+        fpsTimer.start();
+
+        // Poll events to enable the exit out button
+        while( SDL_PollEvent( &e ) ){
+            if( e.type == SDL_QUIT ){
+                quit = true;
+            }
+        }
+
+        // Render the background
+        background.render(renderer, 0, 0);
+
+        // Set the render color for the "on" tiles
+        if(direction == ScrollDirection::UP || direction == ScrollDirection::DOWN){
+            // Up/Down direction, Render the "on" tiles
+            for(int i = 0; i < rows; i++){
+                fillRect.y = i * (pixelSize + 1);
+                for(int j = 0; j < cols; j++){
+                    fillRect.x = j * (pixelSize + 1);
+                    SDL_SetRenderDrawColor(renderer, currData[i][j]);
+                    SDL_RenderFillRect(renderer, &fillRect);
+                }
+            }
+
+            // Scroll the grid
+            if(direction == ScrollDirection::UP){
+                temp = currData[0];
+                for(int i = 0; i < rows - 1; i++){
+                    currData[i] = currData[i + 1];
+                }
+                currData[rows - 1] = temp;
+            } else {
+                temp = currData[rows - 1];
+                for(int i = rows - 1; i > 0; i--){
+                    currData[i] = currData[i - 1];
+                }
+                currData[0] = temp;
+            }
+        } else {
+            // Left/Right - use transpose
+            for(int j = 0; j < cols; j++){
+                fillRect.x = j * (pixelSize + 1);
+                for(int i = 0; i < rows; i++){
+                    fillRect.y = i * (pixelSize + 1);
+                    SDL_SetRenderDrawColor(renderer, currData[j][i]);
+                    SDL_RenderFillRect(renderer, &fillRect);
+                }
+            }
+
+            // Scroll the grid
+            if(direction == ScrollDirection::LEFT){
+                temp = currData[0];
+                for(int j = 0; j < cols - 1; j++){
+                    currData[j] = currData[j + 1];
+                }
+                currData[cols - 1] = temp;
+            } else {
+                temp = currData[cols - 1];
+                for(int j = cols - 1; j > 0; j--){
+                    currData[j] = currData[j - 1];
+                }
+                currData[0] = temp;
+            }
+        }
+
+        // Save the current frame
+        if(saveOutput){
+            filenameMaker << path << currFrame << ".png";
+            outputFilename = filenameMaker.str();
+            filenameMaker.str();
+            window->saveImg(outputFilename);
+        }
+
+        // Update the screen
+        SDL_RenderPresent(renderer);
+
+        // Check the ticks
+        currTicks = fpsTimer.getTicks();
+        if(currTicks < ticksPerFrame){
+            // Wait remaining time
+            SDL_Delay(ticksPerFrame - currTicks);
+        }
+
+        // Check frames
+        if(frameCount > 0){
+            if(currFrame == frameCount){
+                quit = true;
+            }
+        }
+        currFrame++;
+    }
 }
 
 
