@@ -16,6 +16,9 @@ gameoflife.o: gameoflife.cpp gameoflife.h geneticsolver.h rng.h
 geneticsolver.o: geneticsolver.cpp geneticsolver.h rng.h
 	$(COMPILER) $(CFLAGS) -c $<
 
+cellularautomata.o: cellularautomata.cpp cellularautomata.h rng.h
+	$(COMPILER) $(CFLAGS) -c $<
+
 rng.o: rng.cpp rng.h
 	$(COMPILER) $(CFLAGS) -c $<
 

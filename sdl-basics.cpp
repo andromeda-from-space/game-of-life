@@ -2,6 +2,7 @@
 #include <SDL2/SDL_mixer.h>
 
 #include <sstream>
+#include <iostream>
 
 #include "sdl-basics.h"
 
@@ -93,12 +94,10 @@ int SDLWindowWrapper::getHeight(){
 
 //---------- PRIVATE UTILITIES ----------
 bool SDLWindowWrapper::init(std::string title){
-    // TODO - Make code more compact - early returns make else blocks unnecessary
-
     // Initialize the SDL Subsystem if necessary
     if(SDL_INIT_COUNT == 0){
         if(SDL_Init(SDL_INIT_VIDEO) < 0){
-            fprintf(stderr, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+            std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << "\n";
             // TODO - exceptions?
             return false;
         }
@@ -108,7 +107,7 @@ bool SDLWindowWrapper::init(std::string title){
     // Attempt to create the window
     window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, SDL_WINDOW_SHOWN);
     if(!window){
-        fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << "\n";
         // TODO - exceptions?
         return false;
     }
@@ -116,7 +115,7 @@ bool SDLWindowWrapper::init(std::string title){
     // Attempt to create renderer for window
     renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if(!renderer) {
-        fprintf(stderr, "Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
+        std::cerr << "Renderer could not be created! SDL Error: " << SDL_GetError() << "\n";
         // TODO - exceptions?
         return false;
     }
@@ -128,7 +127,7 @@ bool SDLWindowWrapper::init(std::string title){
     int imgFlags = IMG_INIT_PNG;
     if(IMG_INIT_COUNT == 0){
         if(!(IMG_Init(imgFlags) & imgFlags)){
-            fprintf(stderr, "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+            std::cerr << "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << "\n";
             // TODO - exceptions?
             return false;
         }
@@ -139,7 +138,7 @@ bool SDLWindowWrapper::init(std::string title){
     if(useTTF){
         if(TTF_INIT_COUNT == 0){
             if(TTF_Init() == -1){
-                fprintf(stderr, "SDL_TTF could not initialize ! TTF_Error: %s\n", TTF_GetError());
+                std::cerr << "SDL_TTF could not initialize ! TTF_Error: " << TTF_GetError() << "\n";
                 // TODO - exceptions?
                 return false;
             }
@@ -151,7 +150,7 @@ bool SDLWindowWrapper::init(std::string title){
     if(useMixer){
         if(MIX_INIT_COUNT == 0){
              if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0 ){
-                fprintf(stderr, "SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError() );
+                std::cerr << "SDL_mixer could not initialize! SDL_mixer Error: " << Mix_GetError() << "\n";
                 // TODO - exceptions?
                 return false;
              }
@@ -192,7 +191,7 @@ bool SDLTextureWrapper::loadFromFile(SDL_Renderer* renderer, std::string path){
     // Load image at specified path as a surface
     SDL_Surface* loadedSurface = IMG_Load(path.c_str());
     if(!loadedSurface){
-        fprintf(stderr, "Unable to load image %s! SDL Error: %s\n", path.c_str(), IMG_GetError());
+        std::cerr << "Unable to load image " << path << "! SDL Error: " << IMG_GetError() << "\n";
         // TODO - exception handling
         success = false;
     } else {
@@ -202,7 +201,7 @@ bool SDLTextureWrapper::loadFromFile(SDL_Renderer* renderer, std::string path){
         // Convert the loaded image to into a texture
         texture = SDL_CreateTextureFromSurface(renderer, loadedSurface);
         if(!texture){
-            fprintf(stderr, "Unable to optimize image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
+            std::cerr << "Unable to optimize image " << path << "! SDL Error: " << SDL_GetError() << "\n";
             // TODO - exception handling
             success = false;
         } else {
@@ -270,13 +269,13 @@ bool SDLTextureWrapper::createTextTexture(SDL_Renderer* renderer, TTF_Font* font
 
     // Convert Surface to a texture
     if(!textSurface){
-        fprintf(stderr, "Unable to render text to surface! SDL_TTF Error: %s\n", TTF_GetError());
+        std::cerr << "Unable to render text to surface! SDL_TTF Error: " <<  TTF_GetError() << "\n";
         success = false;
     } else {
         // Create the texture
         texture = SDL_CreateTextureFromSurface(renderer, textSurface);
         if(!texture){
-            fprintf(stderr, "Unable to render texture from surface! SDL Error: %s\n", SDL_GetError());
+            std::cerr << "Unable to render texture from surface! SDL Error: " << SDL_GetError() << "\n";
             // TODO - Exceptions?
             success = false;
         }
@@ -416,7 +415,7 @@ void drawPixelGrid(std::string& title, int rows, int cols, bool** data, SDLWindo
 
     // Check for pre-rendered bakground and/or make one
     if(!background){
-        SDLTextureWrapper* background;
+        background = new SDLTextureWrapper();
 
         // Clear the screen
         SDL_SetRenderDrawColor(renderer, GRID_FALSE_COLOR);
@@ -454,8 +453,6 @@ void drawPixelGrid(std::string& title, int rows, int cols, bool** data, SDLWindo
     // Rectangle for filling in the individual value
     SDL_Rect fillRect = {0, 0, GRID_PIXEL_SIZE, GRID_PIXEL_SIZE};
 
-    // Frame rate timer
-    SDLTimer fpsTimer;
     // Count of the ticks in the frame
     int frameTicks;
 

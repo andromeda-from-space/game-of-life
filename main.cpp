@@ -1,18 +1,18 @@
 #include <filesystem>
 #include <string>
 #include <SDL2/SDL.h>
+#include <iostream>
+//-- BEGIN UNIX ONLY--
+#include <unistd.h>
+// Code that is not portable will be marked as much as possible
+// unistd.h is a Unix only library
+//-- END UNIX ONLY--
 
 #include "sdl-basics.h"
 #include "geneticsolver.h"
 #include "gameoflife.h"
 
-// Debugging function
-//fprintf(stderr, "DEBUG: %s line %d\n", __FILE__, __LINE__);
-
-// Creating the video in ffmpeg
-//ffmpeg -f image2 -framerate 5 -i frame%d.png -vcodec libx264 -crf 22 video.mp4
-
-
+//---------- TESTING FUNCTION CONSTANTS ----------
 // Default constants for the solver class
 // Directory to save the output into
 const std::string GOLS_OUTPUT_DIR = "";
@@ -36,7 +36,14 @@ const std::string GOLS_BACKGROUND_PNG = "background.png";
 const int GOLS_FPS = 5;
 const int GOLS_TICKS_PER_FRAME = 1000 / GOLS_FPS;
 
-void debug_pulsarVisualization(){
+// Debugging function
+//cerr << "DEBUG: << __FILE__ << " line " << __LINE__ << "\n";
+
+// Creating the video in ffmpeg
+//ffmpeg -f image2 -framerate 5 -i frame%d.png -vcodec libx264 -crf 22 video.mp4
+
+//---------- ADDITIONAL TESTING FUNCTIONS ----------
+void test_pulsarVisualization(){
     // The oscillating pulsar
     int pulsarRows = 13;
     int pulsarCols = 13;
@@ -302,49 +309,161 @@ void renderOrganism(int orgRows, int orgCols, bool* org, int simRows, int simCol
     }
 }
 
-void debug_drawPixelGrid_SingleFrame(){
+void test_drawPixelGrid_SingleFrame(){
+    // Initialize test data
+    int rows = 7;
+    int cols = 7;
+    bool** grid = new bool*[7];
+    for(int i = 0; i < rows; i++){
+        grid[i] = new bool[7];
+    }
 
+    // Set to true and false
+    for(int i = 0; i < rows; i++){
+        for(int j = 0; j < cols; j++){
+            if((i * cols + j) % 2 == 0){
+                grid[i][j] = false;
+            } else {
+                grid[i][j] = true;
+            }
+        }
+    }
+
+    // Call drawPixelGrid
+    std::string title = "Test: Still";
+    drawPixelGrid(title, rows, cols, grid, nullptr);
 }
 
-void debug_drawPixelGrid_Animated(){
+void test_drawPixelGrid_Animated(){
     
 }
 
-int main(){
-    /*
-    // Square
-    int squareRows = 4;
-    int squareCols = 4;
-    bool square[] = {
-        1, 0, 0, 1,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        1, 0, 0, 1
-    };
-    int simRows = 4;
-    int simCols = 4;
-    int totFrames = 10;
-    renderOrganism(squareRows, squareCols, square, simRows, simCols, totFrames);
-    */
+//---------- COMMAND LINE ARGUMENT FUNCTIONS ----------
+// Prints the help menu
+void printHelpMenu(){
+    cerr << "game-of-life Help Menu:\n";
+    cerr << "\t-h - print help menu\n";
+    // Test code
+    cerr << "\t-t # - testing mode with options:\n";
+    cerr << "\t\t0 - test \"pulsar\" in basic domain\n";
+    cerr << "\t\t1 - test basic animated organism - still life \"square\"\n";
+    cerr << "\t\t2 - test basic animated organism - \"glider\"\n";
+    cerr << "\t\t3 - test code for creating a single still image\n";
+    cerr << "\t\t4 - test code for creating a animation\n";
+    cerr << "\t\t5 - test code that wraps the animation as an example of how to use it efficiently\n";
+    cerr << "\t\t6 - test code for the GameOfLife class.\n";
+    // Run code
+    cerr << "\t-t # - experiment mode with options:\n";
+    // TODO - update the help menu
+}
 
-    // Glider
-    int gliderRows = 3;
-    int gliderCols = 3;
-    bool glider[] = {
-        0, 0, 1,
-        1, 0, 1,
-        0, 1, 1
-    };
+// Processes the testing
+void testOptions(int testFlag){
+    switch(testFlag){
+        case 0:
+            // Pulsar test code
+            test_pulsarVisualization();
+            break;
+        case 1:
+            // Square
+            int squareRows = 4;
+            int squareCols = 4;
+            bool square[] = {
+                1, 0, 0, 1,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                1, 0, 0, 1
+            };
+            int simRows = 4;
+            int simCols = 4;
+            int totFrames = 10;
+            renderOrganism(squareRows, squareCols, square, simRows, simCols, totFrames);
+            break;
+        case 2:
+            // Glider
+            int gliderRows = 3;
+            int gliderCols = 3;
+            bool glider[] = {
+                0, 0, 1,
+                1, 0, 1,
+                0, 1, 1
+            };
 
-    // Simulations size
-    int simRows = 5;
-    int simCols = 5;
+            // Simulations size
+            int simRows = 5;
+            int simCols = 5;
 
-    // Total number of frames for the video
-    int totFrames = 40;
+            // Total number of frames for the video
+            int totFrames = 40;
 
-    // Simulate
-    renderOrganism(gliderRows, gliderCols, glider, simRows, simCols, totFrames);
+            // Simulate
+            renderOrganism(gliderRows, gliderCols, glider, simRows, simCols, totFrames);
+            break;
+        case 3:
+            test_drawPixelGrid_SingleFrame();
+            break;
+        case 4:
+            cerr << "Not implemented\n";
+            // TODO
+            break;
+        case 5:
+            cerr << "Not implemented\n";
+            // TODO
+            break;
+        case 6:
+            test_GameOfLife();
+            break;
+        default:
+            cerr << "Invalid testing code. See help menu (-h)\n";
+            break;
+    }
+}
+
+// Run the code to generate the data desired
+void runOptions(int runFlag){
+    cerr << "Not implemented\n";
+    // TODO
+    switch(runFlag){
+        case 0:
+            break;
+        case 1:
+            break;
+        default:
+            cerr << "Invalid experiment code. See help menu (-h)\n";
+            break;
+    }
+}
+
+//---------- MAIN ----------
+int main(int argc, char* argv[]){
+    // Command line options
+    const char* CMD_OPTIONS = "ht:r:";
+    // The current option
+    char opt;
+
+    //-- BEGIN UNIX ONLY--
+    //---------- PROCESS COMMAND LINE ARGUMENTS ----------
+    while((opt = getopt(argc, argv, CMD_OPTIONS)) != -1){
+        switch(opt){
+            case 'h':
+                printHelpMenu();
+                exit(EXIT_SUCCESS);
+                break;
+            case 't':
+                testOptions(atoi(optarg));
+                exit(EXIT_SUCCESS);
+                break;
+            case 'r':
+                runOptions(atoi(optarg));
+                exit(EXIT_SUCCESS);
+            default:
+                break;
+        }
+    }
+    //-- END UNIX ONLY--
+
+    // Default behavior
+    runOptions(0);
 
     return 0;
 }

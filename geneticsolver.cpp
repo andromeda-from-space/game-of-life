@@ -149,13 +149,13 @@ void GeneticAlgorithm::load(string filename){
     int count = 0;
     bool found;
     for(auto itr = lines.begin(); itr != lines.end(); itr++){
-        for(int i = 0; i < itr->length(); i++){
+        for(size_t i = 0; i < itr->length(); i++){
             // Copy the character from the line into the population
             population[count][i] = (*itr)[i];
 
             // Check the possible actions array for the given character
             found = false;
-            for(int j = 0; j < actionsRead.length(); j++){
+            for(size_t j = 0; j < actionsRead.length(); j++){
                 if(actionsRead[j] == (*itr)[i]){
                     found = true;
                 }
