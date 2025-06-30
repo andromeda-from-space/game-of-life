@@ -42,8 +42,130 @@ const int GOLS_TICKS_PER_FRAME = 1000 / GOLS_FPS;
 // Creating the video in ffmpeg
 //ffmpeg -f image2 -framerate 5 -i frame%d.png -vcodec libx264 -crf 22 video.mp4
 
+void renderOrganism(int orgRows, int orgCols, bool* org, int simRows, int simCols, int totFrames){
+    //---------- GRAPHICAL REPRESENTATION ----------
+    //---------- INITIALIZATION ----------
+    // Calculate the
+    int screenWidth = simCols * (GOLS_RENDER_SIZE + 1) - 1;
+    int screenHeight = simRows * (GOLS_RENDER_SIZE + 1) - 1;
+
+    // Initialize the window
+    SDLWindowWrapper window = SDLWindowWrapper(screenWidth, screenHeight, "Game of Life Solver");
+    SDL_Renderer* renderer = window.getRenderer();
+
+    // Draw the background screen
+    SDL_SetRenderDrawColor(renderer, GOLS_BACKGROUND);
+    SDL_RenderClear(renderer);
+
+    // Draw the grid lines
+    SDL_SetRenderDrawColor(renderer, GOLS_GRID_LINES);
+    // Horizontal Grid Lines
+    for(int i = 0; i < simRows - 1; i++){
+        SDL_RenderDrawLine(renderer,
+            0, (GOLS_RENDER_SIZE + 1) * (i + 1) - 1,
+            screenWidth, (GOLS_RENDER_SIZE + 1) * (i + 1) - 1
+        );
+    }
+
+    // Vertical grid lines
+    for(int i = 0; i < simCols - 1; i++){
+        SDL_RenderDrawLine(renderer,
+            (GOLS_RENDER_SIZE + 1) * (i + 1) - 1, 0,
+            (GOLS_RENDER_SIZE + 1) * (i + 1) - 1, screenHeight
+        );
+    }
+
+    // Save to a png
+    window.saveImg(GOLS_OUTPUT_DIR + GOLS_BACKGROUND_PNG);
+
+    // Load into the texture
+    SDLTextureWrapper background = SDLTextureWrapper();
+    background.loadFromFile(renderer, GOLS_OUTPUT_DIR + GOLS_BACKGROUND_PNG);
+
+    //---------- SIMULATION ----------
+    GameOfLife gameSim = GameOfLife(simRows, simCols);
+    gameSim.addOrganism(orgRows, orgCols, org);
+    
+    // Loop for video of simulation
+    // The board for visualization
+    bool** board;
+
+    // SDL_Rect for rendering the tiles
+    SDL_Rect fillRect = {0, 0, GOLS_RENDER_SIZE, GOLS_RENDER_SIZE};
+
+    // Events for SDL to process
+    SDL_Event e;
+    
+    // Frame rate timer
+    SDLTimer fpsTimer;
+
+    // Count of the ticks in the frame
+    int frameTicks;
+
+    // Frame count for creating a set of pngs to make a video
+    int frameCount = 0;
+
+    // File name for frames
+    std::string framePrefix = "./video/frame";
+    std::string frameSuffix = ".png";
+    std::string filename;
+
+    // Continue until the window is exited out of
+    bool quit = false;
+    while(!quit && frameCount < totFrames){
+        // Start the timer
+        fpsTimer.start();
+
+        while( SDL_PollEvent( &e ) ){
+            if( e.type == SDL_QUIT ){
+                quit = true;
+            }
+        }
+        
+        // Clear the renderer
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+
+        // Render the background
+        background.render(renderer, 0, 0);
+
+        // Render the tiles
+        board = gameSim.getBoard();
+        SDL_SetRenderDrawColor(renderer, GOLS_ORG_COLOR);
+        for(int i = 0; i < simRows; i++){
+            fillRect.y = i * (GOLS_RENDER_SIZE + 1);
+            for(int j = 0; j < simCols; j++){
+                fillRect.x = j * (GOLS_RENDER_SIZE + 1);
+                if(board[i][j]){
+                    SDL_RenderFillRect(renderer, &fillRect);
+                }
+            }
+        }
+
+        // Save the frame
+        filename = framePrefix + to_string(frameCount) + frameSuffix;
+        window.saveImg(filename);
+
+        // Flip the screen
+        SDL_RenderPresent(renderer);
+
+        // Timestep in the Game of Life sim
+        gameSim.step();
+
+        // Increment frame count
+        frameCount++;
+
+        // Enforce the frame rate cap
+        frameTicks = fpsTimer.getTicks();
+        if( frameTicks < GOLS_TICKS_PER_FRAME ){
+            // Wait remaining time
+            SDL_Delay( GOLS_TICKS_PER_FRAME - frameTicks );
+        }
+    }
+}
+
 //---------- ADDITIONAL TESTING FUNCTIONS ----------
-void test_pulsarVisualization(){
+void test_pulsar(){
     // The oscillating pulsar
     int pulsarRows = 13;
     int pulsarCols = 13;
@@ -187,126 +309,41 @@ void test_pulsarVisualization(){
     }
 }
 
-void renderOrganism(int orgRows, int orgCols, bool* org, int simRows, int simCols, int totFrames){
-    //---------- GRAPHICAL REPRESENTATION ----------
-    //---------- INITIALIZATION ----------
-    // Calculate the
-    int screenWidth = simCols * (GOLS_RENDER_SIZE + 1) - 1;
-    int screenHeight = simRows * (GOLS_RENDER_SIZE + 1) - 1;
+void test_square(){
+    // Square
+    int squareRows = 4;
+    int squareCols = 4;
+    bool square[] = {
+        1, 0, 0, 1,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        1, 0, 0, 1
+    };
+    int simRows = 4;
+    int simCols = 4;
+    int totFrames = 10;
+    renderOrganism(squareRows, squareCols, square, simRows, simCols, totFrames);
+}
 
-    // Initialize the window
-    SDLWindowWrapper window = SDLWindowWrapper(screenWidth, screenHeight, "Game of Life Solver");
-    SDL_Renderer* renderer = window.getRenderer();
+void test_glider(){
+    // Glider
+    int gliderRows = 3;
+    int gliderCols = 3;
+    bool glider[] = {
+        0, 0, 1,
+        1, 0, 1,
+        0, 1, 1
+    };
 
-    // Draw the background screen
-    SDL_SetRenderDrawColor(renderer, GOLS_BACKGROUND);
-    SDL_RenderClear(renderer);
+    // Simulations size
+    int simRows = 5;
+    int simCols = 5;
 
-    // Draw the grid lines
-    SDL_SetRenderDrawColor(renderer, GOLS_GRID_LINES);
-    // Horizontal Grid Lines
-    for(int i = 0; i < simRows - 1; i++){
-        SDL_RenderDrawLine(renderer,
-            0, (GOLS_RENDER_SIZE + 1) * (i + 1) - 1,
-            screenWidth, (GOLS_RENDER_SIZE + 1) * (i + 1) - 1
-        );
-    }
+    // Total number of frames for the video
+    int totFrames = 40;
 
-    // Vertical grid lines
-    for(int i = 0; i < simCols - 1; i++){
-        SDL_RenderDrawLine(renderer,
-            (GOLS_RENDER_SIZE + 1) * (i + 1) - 1, 0,
-            (GOLS_RENDER_SIZE + 1) * (i + 1) - 1, screenHeight
-        );
-    }
-
-    // Save to a png
-    window.saveImg(GOLS_OUTPUT_DIR + GOLS_BACKGROUND_PNG);
-
-    // Load into the texture
-    SDLTextureWrapper background = SDLTextureWrapper();
-    background.loadFromFile(renderer, GOLS_OUTPUT_DIR + GOLS_BACKGROUND_PNG);
-
-    //---------- SIMULATION ----------
-    GameOfLife gameSim = GameOfLife(simRows, simCols);
-    gameSim.addOrganism(orgRows, orgCols, org);
-    
-    // Loop for video of simulation
-    // The board for visualization
-    bool** board;
-
-    // SDL_Rect for rendering the tiles
-    SDL_Rect fillRect = {0, 0, GOLS_RENDER_SIZE, GOLS_RENDER_SIZE};
-
-    // Events for SDL to process
-    SDL_Event e;
-    
-    // Frame rate timer
-    SDLTimer fpsTimer;
-
-    // Count of the ticks in the frame
-    int frameTicks;
-
-    // Frame count for creating a set of pngs to make a video
-    int frameCount = 0;
-
-    // File name for frames
-    std::string framePrefix = "./video/frame";
-    std::string frameSuffix = ".png";
-    std::string filename;
-
-    // Continue until the window is exited out of
-    bool quit = false;
-    while(!quit && frameCount < totFrames){
-        // Start the timer
-        fpsTimer.start();
-
-        while( SDL_PollEvent( &e ) ){
-            if( e.type == SDL_QUIT ){
-                quit = true;
-            }
-        }
-        
-        // Clear the renderer
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
-
-        // Render the background
-        background.render(renderer, 0, 0);
-
-        // Render the tiles
-        board = gameSim.getBoard();
-        SDL_SetRenderDrawColor(renderer, GOLS_ORG_COLOR);
-        for(int i = 0; i < simRows; i++){
-            fillRect.y = i * (GOLS_RENDER_SIZE + 1);
-            for(int j = 0; j < simCols; j++){
-                fillRect.x = j * (GOLS_RENDER_SIZE + 1);
-                if(board[i][j]){
-                    SDL_RenderFillRect(renderer, &fillRect);
-                }
-            }
-        }
-
-        // Save the frame
-        filename = framePrefix + to_string(frameCount) + frameSuffix;
-        window.saveImg(filename);
-
-        // Flip the screen
-        SDL_RenderPresent(renderer);
-
-        // Timestep in the Game of Life sim
-        gameSim.step();
-
-        // Increment frame count
-        frameCount++;
-
-        // Enforce the frame rate cap
-        frameTicks = fpsTimer.getTicks();
-        if( frameTicks < GOLS_TICKS_PER_FRAME ){
-            // Wait remaining time
-            SDL_Delay( GOLS_TICKS_PER_FRAME - frameTicks );
-        }
-    }
+    // Simulate
+    renderOrganism(gliderRows, gliderCols, glider, simRows, simCols, totFrames);
 }
 
 void test_drawPixelGrid_SingleFrame(){
@@ -335,7 +372,46 @@ void test_drawPixelGrid_SingleFrame(){
 }
 
 void test_drawPixelGrid_Animated(){
-    
+    // Initialize test data
+    int rows = 7;
+    int cols = 7;
+    bool** grid = new bool*[7];
+    for(int i = 0; i < rows; i++){
+        grid[i] = new bool[7];
+    }
+
+    // Set to true and false
+    for(int i = 0; i < rows; i++){
+        for(int j = 0; j < cols; j++){
+            if((i * cols + j) % 2 == 0){
+                grid[i][j] = false;
+            } else {
+                grid[i][j] = true;
+            }
+        }
+    }
+
+    // Call drawPixelGrid
+    std::string title = "Test: Animated";
+    SDLWindowWrapper* window = nullptr;
+    int frameRate = 5;
+    drawPixelGrid(title, rows, cols, grid, window, frameRate);
+}
+
+void test_scrolling(){
+    // Generate the data
+    int rows = 10;
+    int cols = 10;
+    SDL_Color** pixelArt = new SDL_Color*[rows];
+    for(int i = 0; i < rows; i++){
+        pixelArt[i] = new SDL_Color[cols];
+        for(int j = 0; j < cols; j++){
+            pixelArt[i][j] = {(Uint8)(i * 25), (Uint8)(j * 25), 0, 255};
+        }
+    }
+
+    // Scroll
+    scrolling(rows, cols, pixelArt);
 }
 
 //---------- COMMAND LINE ARGUMENT FUNCTIONS ----------
@@ -352,8 +428,9 @@ void printHelpMenu(){
     cerr << "\t\t4 - test code for creating a animation\n";
     cerr << "\t\t5 - test code that wraps the animation as an example of how to use it efficiently\n";
     cerr << "\t\t6 - test code for the GameOfLife class.\n";
+    cerr << "\r\t7 - test scrolling pixel art code.\n";
     // Run code
-    cerr << "\t-t # - experiment mode with options:\n";
+    cerr << "\t-r # - experiment mode with options:\n";
     // TODO - update the help menu
 }
 
@@ -361,46 +438,16 @@ void printHelpMenu(){
 void testOptions(int testFlag){
     switch(testFlag){
         case 0:
-            // Pulsar test code
-            test_pulsarVisualization();
+            test_pulsar();  // PASSED
             break;
         case 1:
-            // Square
-            int squareRows = 4;
-            int squareCols = 4;
-            bool square[] = {
-                1, 0, 0, 1,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                1, 0, 0, 1
-            };
-            int simRows = 4;
-            int simCols = 4;
-            int totFrames = 10;
-            renderOrganism(squareRows, squareCols, square, simRows, simCols, totFrames);
+            test_square();  // PASSED
             break;
         case 2:
-            // Glider
-            int gliderRows = 3;
-            int gliderCols = 3;
-            bool glider[] = {
-                0, 0, 1,
-                1, 0, 1,
-                0, 1, 1
-            };
-
-            // Simulations size
-            int simRows = 5;
-            int simCols = 5;
-
-            // Total number of frames for the video
-            int totFrames = 40;
-
-            // Simulate
-            renderOrganism(gliderRows, gliderCols, glider, simRows, simCols, totFrames);
+            test_glider();  // PASSED
             break;
         case 3:
-            test_drawPixelGrid_SingleFrame();
+            test_drawPixelGrid_SingleFrame();   // PASSED
             break;
         case 4:
             cerr << "Not implemented\n";
@@ -411,7 +458,10 @@ void testOptions(int testFlag){
             // TODO
             break;
         case 6:
-            test_GameOfLife();
+            test_GameOfLife();  // PASSED
+            break;
+        case 7:
+            test_scrolling();   // PASSED
             break;
         default:
             cerr << "Invalid testing code. See help menu (-h)\n";

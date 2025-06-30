@@ -166,7 +166,7 @@ int SDL_SetRenderDrawColor(SDL_Renderer*& renderer, SDL_Color& color);
 
 // Some graphical constants
 // Pixel size width for the tiles
-const int GRID_PIXEL_SIZE = 5;
+const int GRID_PIXEL_SIZE = 20;
 // Color for the tiles that are labeled true
 const SDL_Color GRID_FALSE_COLOR = {255, 255, 255, 255};
 // Color for the grid line
@@ -174,5 +174,9 @@ const SDL_Color GRID_LINES_COLOR = {150, 150, 150, 255};
 // Color for the tiles that are labeled false
 const SDL_Color GRID_TRUE_COLOR = {255, 234, 0, 255};
 
+// Draws the pixel grid provided as either on or off
 void drawPixelGrid(std::string& title, int rows, int cols, bool** data, SDLWindowWrapper* window, int frameRate = -1, SDLTextureWrapper* background = nullptr, std::string* backgroundOut = nullptr, std::string* saveOutput = nullptr);
+
+// Makes a scrolling image of the pixel grid provided as SDL_Colors, scrolls right to left
+void scrolling(int rows, int cols, SDL_Color** data);
 #endif
