@@ -32,7 +32,7 @@ class GeneticAlgorithm{
     public:
         //---------- CONSTRUCTORS & DESTRUCTOR ----------
         GeneticAlgorithm();
-        GeneticAlgorithm(int sizePopulation, int sizeMembers);
+        GeneticAlgorithm(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens);
         GeneticAlgorithm(const GeneticAlgorithm& otherGA);
         GeneticAlgorithm& operator=(const GeneticAlgorithm& otherGA);
         virtual ~GeneticAlgorithm();
@@ -47,6 +47,7 @@ class GeneticAlgorithm{
         // Initializes the population
         void initPop();
         // Evaluates the fitness of a member of the population
+        // Note: use of pure virtual to force implementation
         virtual double fitness(int member) = 0;
         // Train the algorithm for the specified number of generations
         void train(int numGenerations);
@@ -56,6 +57,12 @@ class GeneticAlgorithm{
         void breed();
         // Mutate the children based on the mutation rate
         void mutate();
+        // Returns the most fit member index based on the current fitness values, recalculates if desired
+        int getMostFit(bool calcFitness);
+
+        //---------- ACCESSORS ----------
+        // Makes a copy of the member for external use
+        char* getMember(int member);
 
         //---------- MUTATORS ----------
         void setCrossovers(int crossovers);

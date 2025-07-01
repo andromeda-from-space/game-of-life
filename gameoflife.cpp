@@ -1,8 +1,13 @@
 #include <iostream>
+#include <sstream>
 
 #include "rng.h"
 #include "gameoflife.h"
+#include "sdl-basics.h"
 
+//-------------------------------------------------------------------------------------
+//---------- GameOfLife ---------------------------------------------------------------
+//-------------------------------------------------------------------------------------
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
 GameOfLife::GameOfLife() : rows(GAME_OF_LIFE_DEFAULT_ROWS), cols(GAME_OF_LIFE_DEFAULT_COLS), board(nullptr) {
     rng::seedRNG();
@@ -359,6 +364,181 @@ void GameOfLife::deleteBoard(){
     }
 }
 
+//-------------------------------------------------------------------------------------
+//---------- GameOfLifeGA -------------------------------------------------------------
+//-------------------------------------------------------------------------------------
+//---------- CONSTRUCTORS & DESTRUCTOR ----------
+GameOfLifeGA::GameOfLifeGA() : GeneticAlgorithm(), GameOfLife(), fitnessFunc(GoLFitnessFunction::FinalStepTiles), maxSteps(-1), orgRows(-1), orgCols(-1) {}
+
+GameOfLifeGA::GameOfLifeGA(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens, int rows, int cols, GoLFitnessFunction fitnessFunc, int maxSteps, int orgRows, int orgCols) : GeneticAlgorithm(sizePopulation, sizeMembers, numActions, actions,crossovers, mutationRate, totalGens), GameOfLife(rows, cols), fitnessFunc(fitnessFunc), maxSteps(maxSteps), orgRows(orgRows), orgCols(orgCols){}
+
+GameOfLifeGA::GameOfLifeGA(const GameOfLifeGA & other) : GeneticAlgorithm(other), GameOfLife(other), fitnessFunc(other.fitnessFunc), maxSteps(other.maxSteps), orgRows(other.orgRows), orgCols(other.orgCols) {}
+
+GameOfLifeGA& GameOfLifeGA::operator=(const GameOfLifeGA & other){
+    // Check for self-assignment
+    if(this != &other){
+        // Perform operator= operations on base class components
+        this->GeneticAlgorithm::operator=(other);
+        this->GameOfLife::operator=(other);
+
+        // Do other assignments
+        fitnessFunc = other.fitnessFunc;
+        maxSteps = other.maxSteps;
+        orgRows = other.orgRows;
+        orgCols = other.orgCols;
+    }
+    return *this;
+}
+
+GameOfLifeGA::~GameOfLifeGA(){}
+
+//---------- GENETIC ALGORITHM FUNCTIONS ----------
+double GameOfLifeGA::fitness(int member){
+    if(fitnessFunc == GoLFitnessFunction::FinalStepTiles){
+        return fitnessMostTiles(member);
+    } else if(fitnessFunc == GoLFitnessFunction::AverageChangeTiles){
+        return fitnessAverageChangeTiles(member);
+    } else if(fitnessFunc == GoLFitnessFunction::CenterOfMassMotion){
+        return fitnessCenterOfMassMotion(member);
+    } else {
+        std::cerr << "Error: invalid fitness function.\n";
+        return 0.0;
+    }
+}
+
+//---------- UTILITIES ----------
+void GameOfLifeGA::animateMember(int member, int steps){
+    // Reset the board
+    resetBoard();
+
+    // Add the organism
+    addOrganism(orgRows, orgCols, population[member]);
+
+    // Generate the frames
+    bool*** frameData = new bool**[steps + 1];
+    frameData[0] = new bool*[rows];
+    for(int i = 0; i < rows; i++){
+        frameData[0][i] = new bool[cols];
+        for(int j = 0; j < cols; j++){
+            frameData[0][i][j] = board[i][j];
+        }
+    }
+
+    for(int k = 0; k < steps; k++){
+        step();
+        getBoardSafe(frameData[k + 1]); 
+    }
+
+    // Animate
+    std::stringstream sstream;
+    sstream << "Game of Life GA, member = " << member;
+    std::string title = sstream.str();
+    SDLPixelGridRenderer animation = SDLPixelGridRenderer(title, rows, cols);
+    animation.animateBoolGrid(frameData, steps + 1, 5, false, "");
+}
+
+//---------- PRIVATE UTILITIES ----------
+double GameOfLifeGA::fitnessMostTiles(int member){
+    // Reset the board
+    resetBoard();
+
+    // Add the organism in
+    addOrganism(orgRows, orgCols, population[member]);
+
+    // Step the game forward
+    for(int i = 0; i < maxSteps; i++){
+        step();
+    }
+
+    // Count all the tiles that are on
+    double fitness = 0.0;
+    for(int i = 0; i < rows; i++){
+        for(int j = 0; j < cols; j++){
+            if(board[i][j]){
+                fitness += 1.0;
+            }
+        }
+    }
+
+    return fitness;
+}
+
+double GameOfLifeGA::fitnessAverageChangeTiles(int member){
+    // Reset the board
+    resetBoard();
+
+    // Add the organism in
+    addOrganism(orgRows, orgCols, population[member]);
+
+    // Step the game forward
+    double fitness = 0.0;
+    for(int i = 0; i < maxSteps; i++){
+        fitness += step();
+    }
+    return fitness / ((double) maxSteps);
+}
+
+double GameOfLifeGA::fitnessCenterOfMassMotion(int member){
+    // Reset the board
+    resetBoard();
+
+    // Add the organism in
+    addOrganism(orgRows, orgCols, population[member]);
+
+    // Calculate the center of mass
+    double numerXCoM;
+    double numerYCoM;
+    double denomCoM;
+    for(int i = 0; i < rows; i++){
+        for(int j = 0; j < cols; j++){
+            if(board[i][j]){
+                numerYCoM += (i + 0.5);
+                numerXCoM += (j + 0.5);
+                denomCoM += 1.0;
+            }
+        }
+    }
+    double oldXCoM = numerXCoM / denomCoM;
+    double oldYCoM = numerYCoM / denomCoM;
+    double newXCoM = 0.0;
+    double newYCoM = 0.0;
+    double delX;
+    double delY;
+
+    // Step the game forward
+    double fitness = 0.0;
+    for(int k = 0; k < maxSteps; k++){
+        // Perform step
+        step();
+
+        // Calculate the new center of mass
+        for(int i = 0; i < rows; i++){
+            for(int j = 0; j < cols; j++){
+                if(board[i][j]){
+                    numerYCoM += (i + 0.5);
+                    numerXCoM += (j + 0.5);
+                    denomCoM += 1.0;
+                }
+            }
+        }
+        newXCoM = numerXCoM / denomCoM;
+        newYCoM = numerYCoM / denomCoM;
+        
+        // Calculate the differences
+        delX = newXCoM - oldXCoM;
+        delY = newYCoM - oldYCoM;
+
+        // Update fitness
+        fitness += sqrt(delX * delX + delY * delY);
+
+        // Cycle new to old
+        oldXCoM = newXCoM;
+        oldYCoM = newYCoM;
+    }
+    return fitness / ((double) maxSteps);
+}
+
+//---------- EXTERNAL FUNCTIONS ----------
 void test_GameOfLife(){
     // Start a Game of Life with a random board
     GameOfLife game = GameOfLife(17, 17);

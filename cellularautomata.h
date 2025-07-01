@@ -62,14 +62,23 @@ class CellularAutomata1D{
 // Fitness is the average number of values that match the majority over a pre-specified number of tests. The majority calculation is allowed to run for a pre-specified number of steps before concluding
 class MajoritySolverGA : public GeneticAlgorithm {
     public:
+        //---------- CONSTRUCTORS & DESTRUCTOR ----------
+        MajoritySolverGA();
+        MajoritySolverGA(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens);
+        MajoritySolverGA(const MajoritySolverGA & other);
+        MajoritySolverGA& operator=(const MajoritySolverGA & other);
+        ~MajoritySolverGA();
+
         //---------- GENETIC ALGORITHM FUNCTIONS ----------
+        // Fitness function for the genetic algorithm
         double fitness(int member);
 
         //---------- UTILITIES ----------
+        // Creates an animation of the given member
         void animateMember(int member);
     private:
         // Cellular Automata framework for evaluating the fitness
-        CellularAutomata1D currAutomata;
+        CellularAutomata1D* currAutomata;
         // Number of random strings to test the member on when evaluating the fitness
         int numFitnessTests;
         // Domain size for the cellular automata testing

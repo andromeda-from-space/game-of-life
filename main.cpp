@@ -531,21 +531,20 @@ void test_cellularAutomata1D(){
     example.snapShot(start, domainSize, numSteps);
 }
 
-
 void test_cellularAutomata1DGeneral(){
     // Initialize with rule 30 - see https://mathworld.wolfram.com/CellularAutomaton.html
-    // Note the graphic at that link is confusing
+    // Dark mode made the graphics weird
     char rules30[8] = {'1', '1', '1', '0', '0', '0', '0', '1'};
     CellularAutomata1DGeneral example = CellularAutomata1DGeneral(1, rules30);
 
     // Initialize starting point
-    int domainSize = 31;
+    int domainSize = 63;
     bool start[domainSize];
     for(int i = 0; i < domainSize; i ++){
         start[i] = true;
     }
-    start[15] = false;
-    int numSteps = 15;
+    start[32] = false;
+    int numSteps = 31;
 
     // Generate the snapshot
     example.snapShot(start, domainSize, numSteps);

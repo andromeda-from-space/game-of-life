@@ -8,10 +8,21 @@ GeneticAlgorithm::GeneticAlgorithm() : sizePopulation(0), sizeMembers(0), popula
     rng::seedRNG();
 }
 
-GeneticAlgorithm::GeneticAlgorithm(int sizePopulation, int sizeMembers) : sizePopulation(sizePopulation), sizeMembers(sizeMembers), population(nullptr) {
+GeneticAlgorithm::GeneticAlgorithm(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens) : sizePopulation(sizePopulation), sizeMembers(sizeMembers), population(nullptr), numActions(numActions), actions(nullptr), fitnessVals(nullptr), crossovers(crossovers), mutationRate(mutationRate), totalGens(totalGens) {
+    // Deep copy the actions
+    this->actions = new char[numActions];
+    for(int i = 0; i < numActions; i++){
+        this->actions[i] = actions[i];
+    }
+
+    // Allocate memory for the fitness values
+    fitnessVals = new double[sizePopulation];
+
+    // Seed the RNG
     rng::seedRNG();
+
+    // Initialize the population
     initPop();
-    // TODO - fix
 }
 
 GeneticAlgorithm::GeneticAlgorithm(const GeneticAlgorithm& otherGA) : sizePopulation(otherGA.sizePopulation), sizeMembers(otherGA.sizeMembers), population(nullptr), numActions(otherGA.numActions), actions(nullptr), fitnessVals(nullptr), totalFitness(otherGA.totalFitness), crossovers(otherGA.crossovers), mutationRate(otherGA.mutationRate), totalGens(otherGA.totalGens) {
@@ -118,11 +129,7 @@ void GeneticAlgorithm::load(string filename){
 
     // Clear the old data
     if(population){
-        for(int i = 0; i < sizePopulation; i++){
-            delete[](population[i]);
-            population[i] = nullptr;
-        }
-        delete[](population);
+        clearPop();
     }
 
     if(fitnessVals){
@@ -204,6 +211,15 @@ void GeneticAlgorithm::initPop(){
     double roll;
     // The index of the chosen action
     int chosenAction;
+
+    // Reset the population array
+    if(population){
+        clearPop();
+    }
+    population = new char*[sizePopulation];
+    for(int i = 0; i < sizePopulation; i++){
+        population[i] = new char[sizeMembers];
+    }
 
     // Choose random actions
     for(int i = 0; i < sizePopulation; i++){
@@ -345,6 +361,34 @@ void GeneticAlgorithm::mutate(){
             population[i][mutationIndex] = mutateAction;
         }
     }
+}
+
+int GeneticAlgorithm::getMostFit(bool calcFitness){
+    // Calculate the fitness if desired
+    if(calcFitness){
+        evalFitness();
+    }
+
+    // Find the maximum
+    int maxIndex = 0;
+    double maxFitness = fitnessVals[0];
+    for(int i = 1; i < sizePopulation; i++){
+        if(fitnessVals[i] > maxFitness){
+            maxIndex = i;
+            maxFitness = fitnessVals[i];
+        }
+    }
+
+    return maxIndex;
+}
+
+//---------- ACCESSORS ----------
+char* GeneticAlgorithm::getMember(int member){
+    char* memArr = new char[sizeMembers];
+    for(int i = 0; i < sizeMembers; i++){
+        memArr[i] = population[member][i];
+    }
+    return memArr;
 }
 
 //---------- MUTATORS ----------

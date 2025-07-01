@@ -23,19 +23,20 @@ class GameOfLife{
         void addOrganism(int orgRows, int orgCols, char* organism);
         // Generates a random board with chance being the chance (percent as decimal) that a board state starts occupied (true)
         void randomBoard(double chance);
-        // Performs a single step of the game of life counting the net number of tiles changed - possibly good for a fitness function
+        // Performs a single step of the game of life counting the net number of tiles changed
         int step();
         // Creates a copy of the board overwriting the data - provides write protection
         void getBoardSafe(bool** data);
         // Provides direct access to the board through a copy of the pointer - gives user direct access to the board and is not write safe
         bool** getBoard();
+        
 
         //---------- DEBUGGING UTILITIES ----------
         // Prints out the differences
         friend void diffPrint(ostream& os, const GameOfLife& obj1, const bool* expectedBoard);
         // Prints out as 0s and 1s to an ostream
         friend ostream& operator<<(ostream& os, const GameOfLife& obj);
-    private:
+    protected:
         // The number of rows in the game of life board
         int rows;
         // The number of columns in the game of life board
@@ -43,17 +44,55 @@ class GameOfLife{
         // The board itself
         bool** board;
 
-        //---------- PRIVATE UTILITIES ----------
-        // Sets all the data in the board to 0
-        void resetBoard();
+        //---------- PROTECTED UTILITIES ----------        
         // Deletes the board data
         void deleteBoard();
+        // Sets all the data in the board to 0
+        void resetBoard();
 };
 
-class GameOfLifeGA : public GeneticAlgorithm {
-    
+enum class GoLFitnessFunction {
+    FinalStepTiles,
+    AverageChangeTiles,
+    CenterOfMassMotion
 };
 
+// TODO - constructor and destructor
+class GameOfLifeGA : public GeneticAlgorithm, public GameOfLife {
+    public:
+        //---------- CONSTRUCTORS & DESTRUCTOR ----------
+        GameOfLifeGA();
+        GameOfLifeGA(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens, int rows, int cols, GoLFitnessFunction fitnessFunc, int maxSteps, int orgRows, int orgCols);
+        GameOfLifeGA(const GameOfLifeGA & other);
+        GameOfLifeGA& operator=(const GameOfLifeGA & other);
+        ~GameOfLifeGA();
+
+        //---------- GENETIC ALGORITHM FUNCTIONS ----------
+        // Fitness function for the genetic algorithm
+        double fitness(int member);
+
+        //---------- UTILITIES ----------
+        // Creates an animation of the given member
+        void animateMember(int member, int steps);
+    private:
+        // Fitness function being used
+        GoLFitnessFunction fitnessFunc;
+        // Maximum number of steps for the simulation
+        int maxSteps;
+        // Size of the organisms
+        int orgRows;
+        int orgCols;
+
+        //---------- PRIVATE UTILITIES ----------
+        // Calculates a fitness value for a member based on having the most tiles on at the final time step
+        double fitnessMostTiles(int member);
+        // Calculates a fitness value for a member based on having the largest average in tiles over the simulation
+        double fitnessAverageChangeTiles(int member);
+        // Calculates a fitness value for a member based on having the most motion of it's center of mass
+        double fitnessCenterOfMassMotion(int member);
+};
+
+//---------- EXTERNAL FUNCTIONS ----------
 void test_GameOfLife();
 
 #endif
