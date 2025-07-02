@@ -299,51 +299,51 @@ WrapInt WrapInt::operator--(int dummy){
 }
 
 bool operator==(const WrapInt& lhs, const WrapInt& rhs){
-
+    return lhs.currVal == rhs.currVal;
 }
 
 bool operator==(int lhs, const WrapInt& rhs){
-
+    return lhs == rhs.currVal;
 }
 
 bool operator==(const WrapInt& lhs, int rhs){
-
+    return lhs.currVal == rhs;
 }
 
 bool operator<(const WrapInt& lhs, const WrapInt& rhs){
-
+    return lhs.currVal < rhs.currVal;
 }
 
 bool operator<(int lhs, const WrapInt& rhs){
-
+    return lhs < rhs.currVal;
 }
 
 bool operator<(const WrapInt& lhs, int rhs){
-
+    return lhs.currVal < rhs;
 }
 
 bool operator>(const WrapInt& lhs, const WrapInt& rhs){
-
+    return lhs.currVal > rhs.currVal;
 }
 
 bool operator>(int lhs, const WrapInt& rhs){
-
+    return lhs > rhs.currVal;
 }
 
 bool operator>(const WrapInt& lhs, int rhs){
-
+    return lhs.currVal > rhs;
 }
 
 bool operator<=(const WrapInt& lhs, const WrapInt& rhs){
-
+    return lhs.currVal <= rhs.currVal;
 }
 
 bool operator<=(int lhs, const WrapInt& rhs){
-
+    return lhs <= rhs.currVal;
 }
 
 bool operator<=(const WrapInt& lhs, int rhs){
-    
+    return lhs.currVal <= rhs;
 }
 
 bool operator>=(const WrapInt& lhs, const WrapInt& rhs){
