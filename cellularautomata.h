@@ -93,17 +93,37 @@ class WrapInt {
     public:
         //---------- CONSTRUCTORS ----------
         WrapInt();
-
-        //---------- PUBLIC MEMBERS ----------
-        int currVal;
-        int max;
+        WrapInt(int val, int max);
 
         //---------- OPERATIONS ----------
-        WrapInt& operator+=(int a);
-        WrapInt& operator-=(int b);
+        // Arithemetic assignment
+        WrapInt& operator+=(int rhs);
+        WrapInt& operator-=(int rhs);
+        WrapInt& operator*=(int rhs);
+        WrapInt& operator/=(int rhs);
+        // Increment
         WrapInt& operator++();
+        WrapInt operator++(int dummy);
+        // Decrement
         WrapInt& operator--();
+        WrapInt operator--(int dummy);
+
+        //---------- UTILITIES ----------
+        // Enforces the wrap around condition
         void wrapVal();
+
+        //---------- MUTATORS ----------
+        void setVal(int newVal);
+        void setMax(int newMax);
+        
+        //---------- ACCESSORS ----------
+        int getVal();
+
+    private:
+        // The value of the integer
+        int currVal;
+        // The maximum value before it gets wrapped - i.e. the mod space
+        int max;
 };
 
 // Generalizes the above concept, where instead of just the most immediate left and right neighbor, considers some k neighbors in each direction (k = 1 is the above case)

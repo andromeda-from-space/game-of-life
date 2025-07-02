@@ -262,7 +262,43 @@ void MajoritySolverGA::animateMember(int member){
 //---------- CONSTRUCTORS ----------
 WrapInt::WrapInt() : currVal(0), max(0){}
 
+WrapInt::WrapInt(int val, int max) : currVal(val), max(max) {
+    wrapVal();
+}
+
 //---------- OPERATIONS ----------
+WrapInt& WrapInt::operator+=(int rhs){
+    currVal += rhs;
+    wrapVal();
+}
+
+WrapInt& WrapInt::operator-=(int rhs){
+    currVal -= rhs;
+    wrapVal();
+}
+
+WrapInt& WrapInt::operator*=(int rhs){
+    currVal *= rhs;
+    wrapVal();
+}
+
+WrapInt& WrapInt::operator++(){
+    currVal = currVal + 1 == max ? 0 : currVal + 1;
+}
+
+WrapInt WrapInt::operator++(int dummy){
+    return WrapInt(currVal + 1 == max ? 0 : currVal + 1, max);
+}
+
+WrapInt& WrapInt::operator--(){
+    currVal = currVal - 1 < 0 ? max - 1 : currVal - 1
+}
+
+WrapInt WrapInt::operator--(int dummy){
+    return WrapInt(currVal - 1 < 0 ? max - 1 : currVal - 1, max);
+}
+
+//---------- UTILITIES ----------
 void WrapInt::wrapVal() {
     if(currVal >= max){
         currVal = currVal % max;
@@ -272,10 +308,24 @@ void WrapInt::wrapVal() {
     }
 }
 
+//---------- MUTATORS ----------
+void WrapInt::setVal(int newVal){
+    currVal = newVal;
+    wrapVal();
+}
 
-//-----------------------------------------------------------------------------------------------------------
-//---------------------------------------- CellularAutomata1DGeneral ----------------------------------------
-//-----------------------------------------------------------------------------------------------------------
+void WrapInt::setMax(int newMax){
+    max = newMax;
+}
+
+//---------- ACCESSORS ----------
+int WrapInt::getVal(){
+    return currVal;
+}
+
+//-----------------------------------------------------------------------------
+//---------- CellularAutomata1DGeneral ----------------------------------------
+//-----------------------------------------------------------------------------
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
 CellularAutomata1DGeneral::CellularAutomata1DGeneral() : neighborCount(0), numRules(0), rules(nullptr) {
     // Count of the neighbors in each direction - default is k = 1
@@ -368,23 +418,20 @@ void CellularAutomata1DGeneral::step(bool*& curr, int domainSize){
     bool* next = new bool[domainSize];
 
     // Create a wrapping index value
-    WrapInt wrapIndex = WrapInt();
-    wrapIndex.max = domainSize;
+    WrapInt wrapIndex = WrapInt(0, domainSize);
     
     // Update all values
     for(int i = 0; i < domainSize; i++){
         // Initial value
-        wrapIndex.currVal = i + neighborCount;
-        wrapIndex.wrapVal();
+        wrapIndex.setVal(i + neighborCount);
 
         // Calculate the local rule value to use
         ruleVal = 0;
         currMult = 1;
         for(int j = 0; j < 2 * neighborCount + 1; j++){
-            ruleVal += currMult * curr[wrapIndex.currVal];
+            ruleVal += currMult * curr[wrapIndex.getVal()];
             currMult *= 2;
-            wrapIndex.currVal -= 1;
-            wrapIndex.wrapVal();
+            wrapIndex -= 1;
         }
         next[i] = rules[ruleVal] == CA_TRUE;
     }
