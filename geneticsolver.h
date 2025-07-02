@@ -58,7 +58,7 @@ class GeneticAlgorithm{
         // Note: use of pure virtual to force implementation
         virtual double fitness(int member) = 0;
         // Train the algorithm for the specified number of generations
-        void train(int numGenerations);
+        void train(int numGenerations = 1);
         // Evaluate the fitness of the population
         void evalFitness();
         // Choose parents for breeding and create a new population
@@ -71,6 +71,8 @@ class GeneticAlgorithm{
         //---------- ACCESSORS ----------
         // Makes a copy of the member for external use
         char* getMember(int member);
+        // Returns the average fitness - calculates the fitness if necessary
+        double getAverageFitness(bool calcFitness);
 
         //---------- MUTATORS ----------
         void setCrossovers(int crossovers);
@@ -98,9 +100,14 @@ class GeneticAlgorithm{
         // Total number of generations
         int totalGens;
     private:
-        //---------- PRIVATE UTITLITIES ----------
+        //---------- PRIVATE UTILITIES ----------
         // Deletes the data in the population array
         void clearPop();
+
+        //---------- DEBUGGING UTILITIES ----------
+        // Prints the population when called on this->population
+        // Also allows for debugging the breeding algorithm which generates a new population
+        void printPop(char** pop);
 };
 
 #endif

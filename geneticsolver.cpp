@@ -1,3 +1,6 @@
+//--DEBUG--
+#include <iostream>
+//--END DEBUG--
 #include <fstream>
 
 #include "geneticsolver.h"
@@ -303,21 +306,21 @@ void GeneticAlgorithm::breed(){
         indexParent1 = 0;
         currFitness = fitnessVals[0];
         while(currFitness < roll){
-            currFitness += fitnessVals[indexParent1];
             indexParent1++;
+            currFitness += fitnessVals[indexParent1];
         }
 
         //Pick the second parent
         roll = rng::genRandDouble(0.0, totalFitness);
-        indexParent1 = 0;
+        indexParent2 = 0;
         currFitness = fitnessVals[0];
         while(currFitness < roll){
-            currFitness += fitnessVals[indexParent1];
-            indexParent1++;
+            indexParent2++;
+            currFitness += fitnessVals[indexParent2];
         }
 
         // Generate crossover points
-        crossoverPoints[0] = rng::genRandInt(0, sizeMembers - 1);
+        crossoverPoints[0] = rng::genRandInt(1, sizeMembers - 1);
         for(int j = 1; j < crossovers; j++){
             currCrossoverPoint = rng::genRandInt(0, sizeMembers - 1);
             for(int k = 0; k < j; k++){
@@ -331,6 +334,7 @@ void GeneticAlgorithm::breed(){
         }
 
         // Perform crossover
+        index = 0;
         for(int j = 0; j < crossovers; j++){
             // Copy from the first parent
             while(index < crossoverPoints[j]){
@@ -353,25 +357,32 @@ void GeneticAlgorithm::breed(){
     // Pointer shuffle
     clearPop();
     population = newPopulation;
-
 }
 
 void GeneticAlgorithm::mutate(){
-    //---------- DECLARATIONS ----------
-    // Number of mutations to perform
-    int numMutations;
-    // Index to mutate at
-    int mutationIndex;
-    // Action to mutate to
-    char mutateAction;
+    bool fastFlag = (mutationRate * ((double) sizeMembers)) > 1;
+    if(fastFlag){
+        //---------- LARGE MEMBER ALGORITHM ----------
+        // Number of mutations
+        int numMutations;
 
-    //---------- ALGORITHM ----------
-    for(int i = 0; i < sizePopulation; i++){
-        numMutations = rng::genRandDouble(0.0, mutationRate) * sizeMembers;
-        for(int j = 0; j < numMutations; j++){
-            mutationIndex = rng::genRandInt(0, sizeMembers - 1);
-            mutateAction = actions[rng::genRandInt(0, numActions)];
-            population[i][mutationIndex] = mutateAction;
+        // Perform mutations
+        for(int i = 0; i < sizePopulation; i++){
+            numMutations = rng::genRandDouble(0.0, mutationRate);
+            for(int j = 0; j < numMutations; j++){
+                population[i][rng::genRandInt(0, sizePopulation - 1)] = actions[rng::genRandInt(0, numActions - 1)];
+            }
+        }
+        // Note: this algorithm changes the definition of the mutation rate a little, as you can only mutate UP to the mutationRate * sizeMembers
+    } else {
+        //---------- SMALL MEMBER ALGORITHM ----------
+        // For each member, randomly mutate each character based on the mutation, choosing from the set of available actions
+        for(int i = 0; i < sizePopulation; i++){
+            for(int j = 0; j < sizeMembers; j++){
+                if(rng::genRandDouble(0.0, 1.0) < mutationRate){
+                    population[i][j] = actions[rng::genRandInt(0, numActions - 1)];
+                }
+            }
         }
     }
 }
@@ -404,6 +415,16 @@ char* GeneticAlgorithm::getMember(int member){
     return memArr;
 }
 
+double GeneticAlgorithm::getAverageFitness(bool calcFitness){
+    // Calculate the fitness if necessary
+    if(calcFitness){
+        evalFitness();
+    }
+
+    // Returns the average total fitness
+    return totalFitness / ((double) sizePopulation);
+}
+
 //---------- MUTATORS ----------
 void GeneticAlgorithm::setCrossovers(int crossovers){
     this->crossovers = crossovers;
@@ -426,5 +447,16 @@ void GeneticAlgorithm::clearPop(){
             population[i] = nullptr;
         }
         delete[](population);
+    }
+}
+
+//---------- DEBUGGING UTILITIES ----------
+void GeneticAlgorithm::printPop(char** pop){
+    for(int i = 0; i < sizePopulation; i++){
+        std::cerr << "Member " << i << ": ";
+        for(int j = 0; j < sizeMembers; j++){
+            std::cerr << pop[i][j] << " ";
+        }
+        std::cerr << "\n";
     }
 }

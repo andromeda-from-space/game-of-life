@@ -144,10 +144,10 @@ int CellularAutomata1D::majority(bool*& start, int domainSize, int maxSteps){
     }
 
     // Check if algorithm completed
-    if(!done && currStep < maxSteps){
-        return -1;
-    } else {
+    if(done){
         return start[0];
+    } else {
+        return -1;
     }
 }
 
@@ -158,12 +158,12 @@ void CellularAutomata1D::setRules(char* newRules){
     }
 }
 
-void CellularAutomata1D::snapShot(bool* start, int domainSize, int numSteps){
+void CellularAutomata1D::snapShot(bool* start, int domainSize, int numSteps, int pixelSize){
     // Generate the data
     bool** data = simulate(start, domainSize, numSteps);
 
     // Draw the snapshot
-    SDLPixelGridRenderer pixelRenderer = SDLPixelGridRenderer("1D Cellular Automata", numSteps + 1, domainSize, CA_GRID_LINES, CA_TRUE_COLOR, CA_FALSE_COLOR);
+    SDLPixelGridRenderer pixelRenderer = SDLPixelGridRenderer("1D Cellular Automata", numSteps + 1, domainSize, CA_GRID_LINES, CA_FALSE_COLOR, CA_TRUE_COLOR, pixelSize);
     pixelRenderer.drawBoolGrid(data, false, "");
 }
 
@@ -218,12 +218,11 @@ double MajoritySolverGA::fitness(int member){
     // Count of initial trueValues
     int totalTrue;
     // The majority value
-    bool majority;
+    bool majorityVal;
     // The value returned by majority
     int eval;
     // Current number of true values
     int currTrue;
-
 
     // Attempt to classify the random starting points
     for(int i = 0; i < numFitnessTests; i++){
@@ -238,14 +237,14 @@ double MajoritySolverGA::fitness(int member){
             }
         }
         // Evaluate which is the majority
-        majority = totalTrue >= domainSize / 2 ? true : false;
+        majorityVal = totalTrue >= domainSize / 2 ? true : false;
 
         // Apply the rules
         eval = currAutomata->majority(start, domainSize, maxSteps);
 
         // Calculate the fitness for this trial
         if(eval >= 0){
-            if(majority == start[0]){
+            if(majorityVal == start[0]){
                 // Got the correct result
                 fitness += domainSize;
             } else {
@@ -258,7 +257,7 @@ double MajoritySolverGA::fitness(int member){
             for(int i = 0; i < domainSize; i++){
                 currTrue += start[i];
             }
-            fitness += (majority ? currTrue : (domainSize - currTrue));
+            fitness += (majorityVal ? currTrue : (domainSize - currTrue));
         }
     }
 
@@ -271,6 +270,11 @@ double MajoritySolverGA::fitness(int member){
 
 //---------- UTILITIES ----------
 void MajoritySolverGA::visualizeMember(int member){
+    // Initialize the automata with the member
+    if(currAutomata){
+        delete(currAutomata);
+        currAutomata = nullptr;
+    }
     currAutomata = new CellularAutomata1D(population[member]);
     
     // Make a random start
@@ -283,23 +287,8 @@ void MajoritySolverGA::visualizeMember(int member){
         }
     }
 
-    // Simulate
-    bool** data = currAutomata->simulate(start, domainSize, maxSteps);
-
-    // Generate the snapshot
-    std::stringstream sstream;
-    sstream << "Game of Life GA, member = " << member;
-    std::string title = sstream.str();
-    SDLPixelGridRenderer animation = SDLPixelGridRenderer(title, maxSteps + 1, domainSize, CA_GRID_LINES, CA_FALSE_COLOR, CA_TRUE_COLOR, CA_PIXEL_SIZE);
-    animation.drawBoolGrid(data, false, "");
-
-    // Cleanup
-    delete[](start);
-    for(int i = 0; i < maxSteps + 1; i++){
-        delete(data[i]);
-        data[i] = nullptr;
-    }
-    delete[](data);
+    // Take snap shot
+    currAutomata->snapShot(start, domainSize, maxSteps, CA_PIXEL_SIZE);
 }
 
 //-----------------------------------------------------------------------------
@@ -622,10 +611,10 @@ int CellularAutomata1DGeneral::majority(bool*& start, int domainSize, int maxSte
     }
 
     // Check if algorithm completed
-    if(!done && currStep < maxSteps){
-        return -1;
-    } else {
+    if(done){
         return start[0];
+    } else {
+        return -1;
     }
 }
 

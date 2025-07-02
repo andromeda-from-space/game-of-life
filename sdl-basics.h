@@ -285,6 +285,10 @@ class SDLPixelGridRenderer {
         void init();
         // Draws the background for repeated rendering
         void drawBackground();
+
+        //---------- DEBUG UTILITIES ----------
+        // Renders just the background image
+        void showBackground();
 };
 
 //---------- EXTERNAL FUNCTIONS ----------

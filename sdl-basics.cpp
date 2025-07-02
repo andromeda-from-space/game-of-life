@@ -518,7 +518,7 @@ SDLPixelGridRenderer::~SDLPixelGridRenderer(){
 
 //---------- UTILITIES ----------
 void SDLPixelGridRenderer::drawBoolGrid(bool** data, bool saveOutput, std::string path){
-        // Flag to exit the window
+    // Flag to exit the window
     bool quit = false;
     // SDL Event to track if 'x' has been pressed
     SDL_Event e;
@@ -978,6 +978,31 @@ void SDLPixelGridRenderer::drawBackground(){
 
     // Reset the renderer
     SDL_SetRenderTarget(renderer, NULL);
+}
+
+//---------- DEBUG UTILITIES ----------
+void SDLPixelGridRenderer::showBackground(){
+    // SDL Loop vars
+    bool quit = false;
+    SDL_Event e;
+    
+    // Render the background
+    background.render(renderer, 0, 0);
+    SDL_RenderPresent(renderer);
+
+    // Loop until space is pressed
+    while(!quit){
+        // Poll events to enable the exit out button
+        while( SDL_PollEvent( &e ) ){
+            if( e.type == SDL_QUIT ){
+                quit = true;
+            } else if(e.type == SDL_KEYDOWN){
+                if(e.key.keysym.sym == SDLK_SPACE){
+                    quit = true;
+                }
+            }
+        }
+    }
 }
 
 //---------- EXTERNAL FUNCTIONS ----------

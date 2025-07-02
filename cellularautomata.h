@@ -50,7 +50,7 @@ class CellularAutomata1D{
 
         //---------- GRAPHICAL REPRESENTATION ----------
         // Create an image of the final result of the rule as applied to the start
-        void snapShot(bool* start, int domainSize, int numSteps);
+        void snapShot(bool* start, int domainSize, int numSteps, int pixelSize = 20);
     private:
         // The rules for simulation
         char* rules;

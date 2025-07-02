@@ -388,6 +388,25 @@ int main(int argc, char* argv[]){
         throw TestException("a > 0.5");
     }
     */
+
+    /*
+    rng::seedRNG();
+    int min = 0;
+    int max = 5;
+    bool seenMin = false;
+    bool seenMax = false;
+    int val;
+    while(!seenMin || !seenMax){
+        val = rng::genRandInt(min, max);
+        std::cout << val << "\n";
+        if(val == min){
+            seenMin = true;
+        }
+        if(val == max){
+            seenMax = true;
+        }
+    }
+    */
    
     return 0;
 }

@@ -13,6 +13,7 @@
 #include "geneticsolver.h"
 #include "cellularautomata.h"
 #include "gameoflife.h"
+#include "rng.h"
 
 //---------- TESTING FUNCTION CONSTANTS ----------
 // Default constants for the solver class
@@ -513,10 +514,8 @@ void test_scrollColorGrid(){
 }
 
 void test_cellularAutomata1D(){
-    // Initialize with rule 30 - see https://mathworld.wolfram.com/CellularAutomaton.html
-    // Note the graphic at that link is confusing
-    char rules30[8] = {'1', '1', '1', '0', '0', '0', '0', '1'};
-    CellularAutomata1D example = CellularAutomata1D(rules30);
+    char rules[8] = {'1', '1', '1', '0', '0', '0', '0', '1'};
+    CellularAutomata1D example = CellularAutomata1D(rules);
 
     // Initialize starting point
     int domainSize = 31;
@@ -581,10 +580,71 @@ void test_WrapInt(){
     cout << "Actual: " << wrapInt.getVal() << " Expected: 5\n";
 }
 
+void test_majority(){
+    // Problem constants
+    int domainSize = 8;
+    int numSteps = 5;
+    
+    // Rule
+    char rules[8] = {'0', '1', '0', '1', '0', '1', '0', '1'};
+    CellularAutomata1D example = CellularAutomata1D(rules);
+
+    // Test with majority
+    bool* start = new bool[domainSize];
+    for(int i = 0; i < domainSize; i++){
+        start[i] = rng::genRandDouble(0.0, 1.0) < 0.5;
+    }
+    bool* startCopy = new bool[domainSize];
+    for(int i = 0; i < domainSize; i++){
+        startCopy[i] = start[i];
+    }
+
+    // Run majority
+    int result = example.majority(start, domainSize, numSteps);
+    std::cout << "Result of applying rule: ";
+    for(int i = 0; i < domainSize; i++){
+        std::cout << start[i];
+    }
+    std::cout << "\n";
+    std::cout << "Result from majority(): " << result << "\n";
+
+    // Show snapshot
+    example.snapShot(startCopy, domainSize, numSteps);
+
+    // Try a different example
+    for(int i = 0; i < 8; i++){
+        rules[i] = '0';
+    }
+    example.setRules(rules);
+
+    for(int i = 0; i < domainSize; i++){
+        start[i] = rng::genRandDouble(0.0, 1.0) < 0.5;
+    }
+    for(int i = 0; i < domainSize; i++){
+        startCopy[i] = start[i];
+    }
+
+    // Run majority
+    result = example.majority(start, domainSize, numSteps);
+    std::cout << "Result of applying rule: ";
+    for(int i = 0; i < domainSize; i++){
+        std::cout << start[i];
+    }
+    std::cout << "\n";
+    std::cout << "Result from majority(): " << result << "\n";
+
+    // Show snapshot
+    example.snapShot(startCopy, domainSize, numSteps);
+
+    // Cleanup
+    delete[](start);
+    delete[](startCopy);
+}
+
 void experiment0_CellularAutomata(){
     // Values for the genetic solver
     // The size of the population
-    int sizePopulation = 100;
+    int sizePopulation = 10;
     // The number of crossovers
     int crossovers = 1;
     // The mutation rate
@@ -592,7 +652,7 @@ void experiment0_CellularAutomata(){
     // The number of attempts to try and get the majority
     int numFitnessTests = 5;
     // The domain size
-    int domainSize = 50;
+    int domainSize = 8;
     // Maximum number of steps to attempt to blackout the whole domain
     int maxSteps = 200;
     // Number of generations to train
@@ -633,6 +693,7 @@ void printHelpMenu(){
     cerr << "\t\t8 - test the basic cellular automaton code.\n";
     cerr << "\t\t9 - test the generalized cellular automaton code.\n";
     cerr << "\t\t10 - test the WrapInt Class.\n";
+    cerr << "\t\t11 - test the majority function in the basic cellular automaton.\n";
     // Run code
     cerr << "\t-r # - experiment mode with options:\n";
     cerr << "\t\t0 - trains cellular automata to solve the majority problem.\n";
@@ -675,6 +736,9 @@ void testOptions(int testFlag){
         case 10:
             test_WrapInt(); // PASSED
             break;
+        case 11:
+            test_majority(); // PASSED
+            break;
         default:
             cerr << "Invalid testing code. See help menu (-h)\n";
             break;
@@ -698,6 +762,9 @@ void runOptions(int runFlag){
 
 //---------- MAIN ----------
 int main(int argc, char* argv[]){
+    // See the rng
+    rng::seedRNG();
+
     // Command line options
     const char* CMD_OPTIONS = "ht:r:";
     // The current option
