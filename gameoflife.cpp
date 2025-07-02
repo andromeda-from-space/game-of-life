@@ -39,8 +39,8 @@ GameOfLife& GameOfLife::operator=(const GameOfLife & other){
         deleteBoard();
 
         // Deep copy the board
-        other.rows;
-        other.cols;
+        rows = other.rows;
+        cols = other.cols;
         board = new bool*[rows];
         for(int i = 0; i < rows; i++){
             board[i] = new bool[cols];

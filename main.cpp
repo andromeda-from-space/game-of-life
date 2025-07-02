@@ -602,7 +602,7 @@ void printHelpMenu(){
     cerr << "\t\t3 - test pixel grid single frame code\n";
     cerr << "\t\t4 - test pixel grid animation code\n";
     cerr << "\t\t5 - test scrolling boolean pixel art code.\n";
-    cerr << "\r\t6 - test scrolling color pixel art code.\n";
+    cerr << "\t\t6 - test scrolling color pixel art code.\n";
     cerr << "\t\t7 - test code for the GameOfLife class.\n";
     cerr << "\t\t8 - test the basic cellular automaton code.\n";
     cerr << "\t\t9 - test the generalized cellular automaton code.\n";
