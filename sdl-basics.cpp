@@ -7,6 +7,37 @@
 #include "sdl-basics.h"
 
 //--------------------------------------------------------------------
+//---------- Exceptions ----------------------------------------------
+//--------------------------------------------------------------------
+InitFailException::InitFailException(const std::string msg) : message(msg) {}
+InitFailException::InitFailException(const char* msg) : message(msg) {}
+
+const char* InitFailException::what() const noexcept{
+    return message.c_str();
+}
+
+LoadFailException::LoadFailException(const std::string msg) : message(msg) {}
+LoadFailException::LoadFailException(const char* msg) : message(msg) {}
+
+const char* LoadFailException::what() const noexcept{
+    return message.c_str();
+}
+
+RenderFailException::RenderFailException(const std::string msg) : message(msg) {}
+RenderFailException::RenderFailException(const char* msg) : message(msg) {}
+
+const char* RenderFailException::what() const noexcept{
+    return message.c_str();
+}
+
+SDLFailException::SDLFailException(const std::string msg) : message(msg) {}
+SDLFailException::SDLFailException(const char* msg) : message(msg) {}
+
+const char* SDLFailException::what() const noexcept{
+    return message.c_str();
+}
+
+//--------------------------------------------------------------------
 //---------- SDLWindowWrapper ----------------------------------------
 //--------------------------------------------------------------------
 // Initialize the static memory
@@ -24,14 +55,27 @@ SDLWindowWrapper::SDLWindowWrapper(int width, int height, std::string title, boo
     init(title);
 }
 
-SDLWindowWrapper::SDLWindowWrapper(const SDLWindowWrapper & other) : screenWidth(other.screenWidth), screenHeight(other.screenHeight), window(nullptr), renderer(nullptr), useTTF(other.useTTF), fpsCap(other.fpsCap){
+SDLWindowWrapper::SDLWindowWrapper(const SDLWindowWrapper & other) : screenWidth(other.screenWidth), screenHeight(other.screenHeight), window(nullptr), renderer(nullptr), useTTF(other.useTTF), useMixer(useMixer), fpsCap(other.fpsCap){
+    // Initialize and create the window
     std::stringstream temp;
     temp << SDL_GetWindowTitle(other.window) << " - new";
     init(temp.str());
 }
 
 SDLWindowWrapper& SDLWindowWrapper::operator=(const SDLWindowWrapper & other){
-    // TODO
+    if(this != &other){
+        // Copy data
+        screenWidth = other.screenWidth;
+        screenHeight = other.screenHeight;
+        useTTF = other.useTTF;
+        useMixer = useMixer;
+        fpsCap = other.fpsCap;
+
+        // Initialize and create the window
+        std::stringstream temp;
+        temp << SDL_GetWindowTitle(other.window) << " - new";
+        init(temp.str());
+    }
     return *this;
 }
 
@@ -115,12 +159,18 @@ Uint32 SDLWindowWrapper::getWindowPixelFormat(){
 
 //---------- PRIVATE UTILITIES ----------
 bool SDLWindowWrapper::init(std::string title){
+    // Return value
+    bool success = true;
+
+    // Error message creation
+    std::stringstream errorMessage;
+
     // Initialize the SDL Subsystem if necessary
     if(SDL_INIT_COUNT == 0){
         if(SDL_Init(SDL_INIT_VIDEO) < 0){
-            std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << "\n";
-            // TODO - exceptions?
-            return false;
+            errorMessage << "SDL could not initialize! SDL_Error: " << SDL_GetError() << "\n";
+            throw InitFailException(errorMessage.str());
+            success = false;
         }
     }
     SDL_INIT_COUNT++;
@@ -128,17 +178,17 @@ bool SDLWindowWrapper::init(std::string title){
     // Attempt to create the window
     window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, SDL_WINDOW_SHOWN);
     if(!window){
-        std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << "\n";
-        // TODO - exceptions?
-        return false;
+        errorMessage << "Window could not be created! SDL_Error: " << SDL_GetError() << "\n";
+        throw SDLFailException(errorMessage.str());
+        success = false;
     }
 
     // Attempt to create renderer for window
     renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if(!renderer) {
-        std::cerr << "Renderer could not be created! SDL Error: " << SDL_GetError() << "\n";
-        // TODO - exceptions?
-        return false;
+        errorMessage << "Renderer could not be created! SDL Error: " << SDL_GetError() << "\n";
+        throw SDLFailException(errorMessage.str());
+        success = false;
     }
 
     // Initialize renderer color
@@ -148,9 +198,9 @@ bool SDLWindowWrapper::init(std::string title){
     int imgFlags = IMG_INIT_PNG;
     if(IMG_INIT_COUNT == 0){
         if(!(IMG_Init(imgFlags) & imgFlags)){
-            std::cerr << "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << "\n";
-            // TODO - exceptions?
-            return false;
+            errorMessage << "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << "\n";
+            throw InitFailException(errorMessage.str());
+            success = false;
         }
     }
     IMG_INIT_COUNT++;
@@ -159,9 +209,9 @@ bool SDLWindowWrapper::init(std::string title){
     if(useTTF){
         if(TTF_INIT_COUNT == 0){
             if(TTF_Init() == -1){
-                std::cerr << "SDL_TTF could not initialize ! TTF_Error: " << TTF_GetError() << "\n";
-                // TODO - exceptions?
-                return false;
+                errorMessage << "SDL_TTF could not initialize ! TTF_Error: " << TTF_GetError() << "\n";
+                throw InitFailException(errorMessage.str());
+                success = false;
             }
         }
         TTF_INIT_COUNT++;
@@ -171,29 +221,33 @@ bool SDLWindowWrapper::init(std::string title){
     if(useMixer){
         if(MIX_INIT_COUNT == 0){
              if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0 ){
-                std::cerr << "SDL_mixer could not initialize! SDL_mixer Error: " << Mix_GetError() << "\n";
-                // TODO - exceptions?
-                return false;
+                errorMessage << "SDL_mixer could not initialize! SDL_mixer Error: " << Mix_GetError() << "\n";
+                throw InitFailException(errorMessage.str());
+                success = false;
              }
         }
         MIX_INIT_COUNT++;
     }
 
-    return true;
+    return success;
 }
 
 //--------------------------------------------------------------------
 //---------- SDLTextureWrapper ---------------------------------------
 //--------------------------------------------------------------------
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
-SDLTextureWrapper::SDLTextureWrapper() : texture(nullptr), width(-1), height(-1){}
+SDLTextureWrapper::SDLTextureWrapper() : texture(nullptr), width(-1), height(-1), ownTexture(true) {}
 
-SDLTextureWrapper::SDLTextureWrapper(const SDLTextureWrapper& other) : texture(nullptr), width(-1), height(-1){
-    // TODO
-}
+SDLTextureWrapper::SDLTextureWrapper(const SDLTextureWrapper& other) : texture(other.texture), width(other.width), height(other.height), ownTexture(false) {}
 
 SDLTextureWrapper& SDLTextureWrapper::operator=(const SDLTextureWrapper& other) {
-    // TODO
+    if(this != &other){
+        // Copy memory
+        texture = other.texture;
+        width = other.width;
+        height = other.height;
+        ownTexture = false;
+    }
     return *this;
 }
 
@@ -209,11 +263,14 @@ bool SDLTextureWrapper::loadFromFile(SDL_Renderer* renderer, std::string path){
     // Flag for loading success
     bool success = true;
 
+    // Error message string stream
+    std::stringstream errorMessage;
+
     // Load image at specified path as a surface
     SDL_Surface* loadedSurface = IMG_Load(path.c_str());
     if(!loadedSurface){
-        std::cerr << "Unable to load image " << path << "! SDL Error: " << IMG_GetError() << "\n";
-        // TODO - exception handling
+        errorMessage << "Unable to load image " << path << "! SDL Error: " << IMG_GetError() << "\n";
+        throw LoadFailException(errorMessage.str());
         success = false;
     } else {
         // Set the color key
@@ -222,8 +279,8 @@ bool SDLTextureWrapper::loadFromFile(SDL_Renderer* renderer, std::string path){
         // Convert the loaded image to into a texture
         texture = SDL_CreateTextureFromSurface(renderer, loadedSurface);
         if(!texture){
-            std::cerr << "Unable to optimize image " << path << "! SDL Error: " << SDL_GetError() << "\n";
-            // TODO - exception handling
+            errorMessage << "Unable to optimize image " << path << "! SDL Error: " << SDL_GetError() << "\n";
+            throw RenderFailException(errorMessage.str());
             success = false;
         } else {
             // Get the image dimensions
@@ -237,7 +294,7 @@ bool SDLTextureWrapper::loadFromFile(SDL_Renderer* renderer, std::string path){
 }
 
 void SDLTextureWrapper::free(){
-    if(texture){
+    if(texture && ownTexture){
         // Destroy the texture
         SDL_DestroyTexture(texture);
         texture = nullptr;
@@ -278,6 +335,9 @@ bool SDLTextureWrapper::createTextTexture(SDL_Renderer* renderer, TTF_Font* font
     // Flag for if creating the texture was successful
     bool success = true;
 
+    // Error message string stream
+    std::stringstream errorMessage;
+
     // Delete old texture
     free();
 
@@ -290,14 +350,15 @@ bool SDLTextureWrapper::createTextTexture(SDL_Renderer* renderer, TTF_Font* font
 
     // Convert Surface to a texture
     if(!textSurface){
-        std::cerr << "Unable to render text to surface! SDL_TTF Error: " <<  TTF_GetError() << "\n";
+        errorMessage << "Unable to render text to surface! SDL_TTF Error: " <<  TTF_GetError() << "\n";
+        throw SDLFailException(errorMessage.str());
         success = false;
     } else {
         // Create the texture
         texture = SDL_CreateTextureFromSurface(renderer, textSurface);
         if(!texture){
-            std::cerr << "Unable to render texture from surface! SDL Error: " << SDL_GetError() << "\n";
-            // TODO - Exceptions?
+            errorMessage << "Unable to render texture from surface! SDL Error: " << SDL_GetError() << "\n";
+            throw RenderFailException(errorMessage.str());
             success = false;
         }
         
@@ -400,71 +461,54 @@ bool SDLTimer::isPaused(){
 //---------- SDLPixelGridRenderer ------------------------------------
 //--------------------------------------------------------------------
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
-SDLPixelGridRenderer::SDLPixelGridRenderer() : rows(-1), cols(-1), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(GRID_FALSE_COLOR), gridLineColor(GRID_LINES_COLOR), trueColor(GRID_TRUE_COLOR){}
+SDLPixelGridRenderer::SDLPixelGridRenderer() : title("SDLPixelGridRenderer"), rows(-1), cols(-1), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(GRID_FALSE_COLOR), gridLineColor(GRID_LINES_COLOR), trueColor(GRID_TRUE_COLOR){}
 
-SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols) : rows(rows), cols(cols), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(GRID_FALSE_COLOR), gridLineColor(GRID_LINES_COLOR), trueColor(GRID_TRUE_COLOR) {
-    // Calculate the window width and height
-    int windowWidth = cols * (pixelSize + 1) - 1;
-    int windowHeight = rows * (pixelSize + 1) - 1;
-
-    // Create the window
-    window = new SDLWindowWrapper(windowWidth, windowHeight, title);
-
-    // Pull out the renderer
-    renderer = window->getRenderer();
-
-    // Create the texture for the background
-    background.createBlankTexture(renderer, window->getWindowPixelFormat(), windowWidth, windowHeight);
-    drawBackground();
-
-    // Reset the renderer
-    SDL_SetRenderTarget(renderer, NULL);
+SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols) : title(title), rows(rows), cols(cols), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(GRID_FALSE_COLOR), gridLineColor(GRID_LINES_COLOR), trueColor(GRID_TRUE_COLOR) {
+    // Run initialization script
+    init();
 }
 
-SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color gridColor) : rows(rows), cols(cols), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(GRID_FALSE_COLOR), gridLineColor(gridColor), trueColor(GRID_TRUE_COLOR) {
-    // Calculate the window width and height
-    int windowWidth = cols * (pixelSize + 1) - 1;
-    int windowHeight = rows * (pixelSize + 1) - 1;
-
-    // Create the window
-    window = new SDLWindowWrapper(windowWidth, windowHeight, title);
-
-    // Pull out the renderer
-    renderer = window->getRenderer();
-
-    // Create the texture for the background
-    background.createBlankTexture(renderer, window->getWindowPixelFormat(), windowWidth, windowHeight);
-    drawBackground();
-
-    // Reset the renderer
-    SDL_SetRenderTarget(renderer, NULL);
+SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color gridColor) : rows(rows), cols(cols), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), gridLineColor(gridColor), falseColor(GRID_FALSE_COLOR), trueColor(GRID_TRUE_COLOR), pixelSize(GRID_PIXEL_SIZE) {
+    // Run initialization script
+    init();
 }
 
-SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color falseColor, SDL_Color gridColor, SDL_Color trueColor) : rows(rows), cols(cols), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(falseColor), gridLineColor(gridColor), trueColor(trueColor) {
-    // Calculate the window width and height
-    int windowWidth = cols * (pixelSize + 1) - 1;
-    int windowHeight = rows * (pixelSize + 1) - 1;
-
-    // Create the window
-    window = new SDLWindowWrapper(windowWidth, windowHeight, title);
-
-    // Pull out the renderer
-    renderer = window->getRenderer();
-
-    // Create the texture for the background
-    background.createBlankTexture(renderer, window->getWindowPixelFormat(), windowWidth, windowHeight);
-    drawBackground();
-
-    // Reset the renderer
-    SDL_SetRenderTarget(renderer, NULL);
+SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color gridColor,SDL_Color falseColor,  SDL_Color trueColor) : rows(rows), cols(cols), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), gridLineColor(gridColor), falseColor(falseColor), trueColor(trueColor), pixelSize(GRID_PIXEL_SIZE) {
+    // Run initialization script
+    init();
 }
 
-SDLPixelGridRenderer::SDLPixelGridRenderer(const SDLPixelGridRenderer& other){
-    // TODO
+SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color gridColor, SDL_Color falseColor, SDL_Color trueColor, int pixelSize) : rows(rows), cols(cols), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), gridLineColor(gridColor), falseColor(falseColor), trueColor(trueColor), pixelSize(pixelSize){
+    // Run initialization script
+    init();
+}
+
+SDLPixelGridRenderer::SDLPixelGridRenderer(const SDLPixelGridRenderer& other) : rows(other.rows), cols(other.cols), ticksPerFrame(other.ticksPerFrame), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), gridLineColor(other.gridLineColor), falseColor(other.falseColor), trueColor(other.trueColor), pixelSize(other.pixelSize){
+    // Run initialization script
+    init();
 }
 
 SDLPixelGridRenderer& SDLPixelGridRenderer::operator=(const SDLPixelGridRenderer& other){
-    // TODO
+    if(this != &other){
+        // Delete the old window
+        if(window){
+            delete(window);
+            window = nullptr;
+        }
+
+        // Set the other variables
+        title = other.title;
+        rows = other.rows;
+        cols = other.cols;
+        ticksPerFrame = other.ticksPerFrame;
+        gridLineColor = other.gridLineColor;
+        falseColor = other.falseColor;
+        trueColor = other.trueColor;
+        pixelSize = other.pixelSize;
+
+        // Re-run initialization
+        init();
+    }
     return *this;
 }
 
@@ -878,7 +922,25 @@ void SDLPixelGridRenderer::setGridLineColor(SDL_Color newColor){
 void SDLPixelGridRenderer::setTrueColor(SDL_Color newColor){
     trueColor = newColor;
 }
+//---------- PRIVATE UTILITIES ----------
+void SDLPixelGridRenderer::init(){
+    // Calculate the window width and height
+    int windowWidth = cols * (pixelSize + 1) - 1;
+    int windowHeight = rows * (pixelSize + 1) - 1;
 
+    // Create the window
+    window = new SDLWindowWrapper(windowWidth, windowHeight, title);
+
+    // Pull out the renderer
+    renderer = window->getRenderer();
+
+    // Create the texture for the background
+    background.createBlankTexture(renderer, window->getWindowPixelFormat(), windowWidth, windowHeight);
+    drawBackground();
+
+    // Reset the renderer
+    SDL_SetRenderTarget(renderer, NULL);
+}
 
 void SDLPixelGridRenderer::drawBackground(){
     // Calculate the window width and height

@@ -1,6 +1,8 @@
 //--DEBUG--
 #include <iostream>
 //--END DEBUG--
+#include <sstream>
+
 #include "cellularautomata.h"
 #include "rng.h"
 #include "sdl-basics.h"
@@ -10,6 +12,9 @@
 //-------------------------------------------------------------------------------------
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
 CellularAutomata1D::CellularAutomata1D() : rules(nullptr){
+    // Seed the rng
+    rng::seedRNG();
+
     // Randomly select rules based on coin flip
     rules = new char[8];
     for(int i = 0; i < 8; i++){
@@ -18,6 +23,10 @@ CellularAutomata1D::CellularAutomata1D() : rules(nullptr){
 }
 
 CellularAutomata1D::CellularAutomata1D(char* rules) : rules(nullptr){
+    // Seed the rng
+    rng::seedRNG();
+
+    // Copy the rules
     this->rules = new char[8];
     for(int i = 0; i < 8; i++){
         this->rules[i] = rules[i];
@@ -50,6 +59,12 @@ CellularAutomata1D::~CellularAutomata1D(){
 }
 
 //---------- UTILITIES ----------
+void CellularAutomata1D::genRandomRules(){
+    for(int i = 0; i < 8; i++){
+        (rng::genRandDouble(0.0, 1.0) > 0.5) ? rules[i] = CA_TRUE : rules[i] = CA_FALSE;
+    }
+}
+
 void CellularAutomata1D::step(bool*& curr, int domainSize){
     // Rule to apply for the current neighborhood of points
     int ruleVal;
@@ -145,7 +160,7 @@ void CellularAutomata1D::snapShot(bool* start, int domainSize, int numSteps){
     bool** data = simulate(start, domainSize, numSteps);
 
     // Draw the snapshot
-    SDLPixelGridRenderer pixelRenderer = SDLPixelGridRenderer("1D Cellular Automata", numSteps + 1, domainSize, CA_FALSE_COLOR, CA_GRID_LINES, CA_TRUE_COLOR);
+    SDLPixelGridRenderer pixelRenderer = SDLPixelGridRenderer("1D Cellular Automata", numSteps + 1, domainSize, CA_GRID_LINES, CA_TRUE_COLOR, CA_FALSE_COLOR);
     pixelRenderer.drawBoolGrid(data, false, "");
 }
 
@@ -253,7 +268,35 @@ double MajoritySolverGA::fitness(int member){
 
 //---------- UTILITIES ----------
 void MajoritySolverGA::animateMember(int member){
-    // TODO
+    currAutomata = new CellularAutomata1D(population[member]);
+    
+    // Make a random start
+    bool* start = new bool[domainSize];
+    for(int i = 0; i < domainSize; i++){
+        if(rng::genRandDouble(0.0, 1.0) > 0.5){
+            start[i] = true;
+        } else {
+            start[i] = false;
+        }
+    }
+
+    // Simulate
+    bool** data = currAutomata->simulate(start, domainSize, maxSteps);
+
+    // Generate the snapshot
+    std::stringstream sstream;
+    sstream << "Game of Life GA, member = " << member;
+    std::string title = sstream.str();
+    SDLPixelGridRenderer animation = SDLPixelGridRenderer(title, maxSteps + 1, domainSize, {150, 150, 150, 255}, {0, 0, 0, 255}, {255, 255, 255, 255}, 5);
+    animation.drawBoolGrid(data, false, "");
+
+    // Cleanup
+    delete[](start);
+    for(int i = 0; i < maxSteps + 1; i++){
+        delete(data[i]);
+        data[i] = nullptr;
+    }
+    delete[](data);
 }
 
 //-----------------------------------------------------------------------------
@@ -270,20 +313,24 @@ WrapInt::WrapInt(int val, int max) : currVal(val), max(max) {
 WrapInt& WrapInt::operator+=(int rhs){
     currVal += rhs;
     wrapVal();
+    return *this;
 }
 
 WrapInt& WrapInt::operator-=(int rhs){
     currVal -= rhs;
     wrapVal();
+    return *this;
 }
 
 WrapInt& WrapInt::operator*=(int rhs){
     currVal *= rhs;
     wrapVal();
+    return *this;
 }
 
 WrapInt& WrapInt::operator++(){
     currVal = currVal + 1 == max ? 0 : currVal + 1;
+    return *this;
 }
 
 WrapInt WrapInt::operator++(int dummy){
@@ -292,6 +339,7 @@ WrapInt WrapInt::operator++(int dummy){
 
 WrapInt& WrapInt::operator--(){
     currVal = currVal - 1 < 0 ? max - 1 : currVal - 1;
+    return *this;
 }
 
 WrapInt WrapInt::operator--(int dummy){
@@ -383,11 +431,18 @@ int WrapInt::getVal(){
     return currVal;
 }
 
+int WrapInt::getMax(){
+    return max;
+}
+
 //-----------------------------------------------------------------------------
 //---------- CellularAutomata1DGeneral ----------------------------------------
 //-----------------------------------------------------------------------------
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
 CellularAutomata1DGeneral::CellularAutomata1DGeneral() : neighborCount(0), numRules(0), rules(nullptr) {
+    // Seed the rng
+    rng::seedRNG();
+
     // Count of the neighbors in each direction - default is k = 1
     neighborCount = 1;
     // The total number of rules
@@ -404,6 +459,9 @@ CellularAutomata1DGeneral::CellularAutomata1DGeneral() : neighborCount(0), numRu
 }
 
 CellularAutomata1DGeneral::CellularAutomata1DGeneral(int neighborCount) : neighborCount(neighborCount), numRules(0), rules(nullptr) {
+    // Seed the rng
+    rng::seedRNG();
+
     // The total number of rules
     numRules = 2;
     for(int i = 0; i < 2 * neighborCount; i++){
@@ -418,6 +476,9 @@ CellularAutomata1DGeneral::CellularAutomata1DGeneral(int neighborCount) : neighb
 }
 
 CellularAutomata1DGeneral::CellularAutomata1DGeneral(int neighborCount, char* rules) : neighborCount(neighborCount), numRules(0), rules(nullptr){
+    // Seed the rng
+    rng::seedRNG();
+
     // The total number of rules
     numRules = 2;
     for(int i = 0; i < 2 * neighborCount; i++){
@@ -469,6 +530,12 @@ CellularAutomata1DGeneral::~CellularAutomata1DGeneral(){
 }
 
 //---------- UTILITIES ----------
+void CellularAutomata1DGeneral::genRandomRules(){
+    for(int i = 0; i < numRules; i++){
+        (rng::genRandDouble(0.0, 1.0) > 0.5) ? rules[i] = CA_TRUE : rules[i] = CA_FALSE;
+    }
+}
+
 void CellularAutomata1DGeneral::step(bool*& curr, int domainSize){
     // Rule to apply for the current neighborhood of points
     int ruleVal;
@@ -573,6 +640,6 @@ void CellularAutomata1DGeneral::snapShot(bool* start, int domainSize, int numSte
     bool** data = simulate(start, domainSize, numSteps);
 
     // Draw the snapshot
-    SDLPixelGridRenderer pixelRenderer = SDLPixelGridRenderer("General 1D Cellular Automata", numSteps + 1, domainSize, CA_FALSE_COLOR, CA_GRID_LINES, CA_TRUE_COLOR);
+    SDLPixelGridRenderer pixelRenderer = SDLPixelGridRenderer("General 1D Cellular Automata", numSteps + 1, domainSize, CA_GRID_LINES, CA_FALSE_COLOR, CA_TRUE_COLOR);
     pixelRenderer.drawBoolGrid(data, false, "");
 }

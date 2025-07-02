@@ -1,4 +1,9 @@
 #include <iostream>
+#include <stdio.h>
+#include <string>
+#include <exception>
+
+#include "rng.h"
 
 using namespace std;
 
@@ -243,6 +248,25 @@ void Derived::printDer(){
     cout << "Doing printDer()\n";
 }
 
+class TestException : public virtual exception {
+    public:
+        // Constructor
+        explicit TestException(const std::string msg);
+        explicit TestException(const char* msg);
+        // what() - for exception messaging
+        const char* what() const noexcept override;
+    private:
+        string message;
+};
+
+// Constructor
+TestException::TestException(const std::string msg) : message(msg) {}
+TestException::TestException(const char* msg) : message(msg) {}
+
+const char* TestException::what() const noexcept {
+    return message.c_str();
+}
+
 // Super basic testing for low level coding issues
 int main(int argc, char* argv[]){
     /*
@@ -310,6 +334,7 @@ int main(int argc, char* argv[]){
     cout << "--------------------\n";
     */
 
+    /*
     // Operator Overloading testing
     OperatorTesting a = OperatorTesting(3);
     OperatorTesting b = OperatorTesting(4);
@@ -332,12 +357,37 @@ int main(int argc, char* argv[]){
     cout << "\n--------------------\n";
     cout << "Testing increment operator:\n";
     cout << "--------------------\n";
-    ++a;
-    a++;
+    ++c;
+    c++;
     cout << "--------------------\n";
 
     // Note the count of copies are the same if all operators are implemented above, whether a friend or non-friend function is used
     // If not, the integer is auto-upcast to an OperatorTesting using OperatorTesting(int) and then the addition is done
+    */
 
+    /*
+    // RNG debugging
+    rng::seedRNG();
+    cout << "A random number: " << rng::genRandDouble(0.0, 1.0) << endl;
+    // RNG likely not being seeded in the classes where it is used
+    */
+   
+    /*
+    // Some string testing with sprintf
+    char buff[128];
+    sprintf(buff, "This is a message with an int %d", 123);
+    string message = string(buff);
+    cout << "|" << buff << "|" << endl;
+    cout << "|" << message << "|" << endl;
+    */
+
+    /*
+    rng::seedRNG();
+    double a = rng::genRandDouble(0.0, 1.0);
+    if(a > 0){
+        throw TestException("a > 0.5");
+    }
+    */
+   
     return 0;
 }

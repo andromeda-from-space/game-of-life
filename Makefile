@@ -3,7 +3,7 @@ CFLAGS = -Wall
 LFLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer
 CFLAGS_DEBUG = -Wall -g
 
-all: game-of-life
+all: game-of-life debug
 
 game-of-life: main.cpp sdl-basics.o geneticsolver.o cellularautomata.o gameoflife.o rng.o
 	$(COMPILER) $(CFLAGS) -o $@ $^ $(LFLAGS)
@@ -23,8 +23,11 @@ cellularautomata.o: cellularautomata.cpp cellularautomata.h rng.h
 rng.o: rng.cpp rng.h
 	$(COMPILER) $(CFLAGS) -c $<
 
-debug: debug.cpp
-	$(COMPILER) $(CFLAGS_DEBUG) -o $@ $^ $(LFLAGS)
+debug: debug.cpp rng-debug.o
+	$(COMPILER) $(CFLAGS_DEBUG) -o $@ $^
+
+rng-debug.o: rng.cpp rng.h
+	$(COMPILER) $(CFLAGS_DEBUG) -c $< -o rng-debug.o
 
 #sdl-basics-debug.o: sdl-basics.cpp sdl-basics.h
 #	$(COMPILER) $(CFLAGS_DEBUG) -c $< -o sdl-basics-debug.o

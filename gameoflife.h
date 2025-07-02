@@ -57,7 +57,6 @@ enum class GoLFitnessFunction {
     CenterOfMassMotion
 };
 
-// TODO - constructor and destructor
 class GameOfLifeGA : public GeneticAlgorithm, public GameOfLife {
     public:
         //---------- CONSTRUCTORS & DESTRUCTOR ----------

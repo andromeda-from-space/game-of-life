@@ -34,6 +34,8 @@ class CellularAutomata1D{
         ~CellularAutomata1D();
 
         //---------- UTILITIES ----------
+        // Generates a new random set of rules
+        void genRandomRules();
         // Updates the current domain based on the rules
         void step(bool*& curr, int domainSize);
         // Simulates the domain for the number of steps, returning an array of all of the results
@@ -53,9 +55,6 @@ class CellularAutomata1D{
         // The rules for simulation
         char* rules;
 };
-
-// TODO - Constructors with parent class
-// TODO - scrath memory? Save some news and deletes in the fitness function?
 
 // Majority Solver Genetic Algorithm
 // Uses a genetic algotihm to solve the basic nearest neighbor domain cell automata in a periodic domain
@@ -133,6 +132,7 @@ class WrapInt {
 
         //---------- ACCESSORS ----------
         int getVal();
+        int getMax();
 
     private:
         // The value of the integer
@@ -142,7 +142,6 @@ class WrapInt {
 };
 
 // Generalizes the above concept, where instead of just the most immediate left and right neighbor, considers some k neighbors in each direction (k = 1 is the above case)
-// TODO - inheritance?
 class CellularAutomata1DGeneral{
     public:
         //---------- CONSTRUCTORS & DESTRUCTOR ----------
@@ -154,6 +153,8 @@ class CellularAutomata1DGeneral{
         ~CellularAutomata1DGeneral();
 
         //---------- UTILITIES ----------
+        // Generates a new random set of rules
+        void genRandomRules();
         // Updates the current domain based on the rules
         void step(bool*& curr, int domainSize);
         // Simulates the domain for the number of steps, returning an array of all of the results

@@ -20,11 +20,35 @@ GameOfLife::GameOfLife(int rows, int cols) : rows(rows), cols(cols), board(nullp
 }
 
 GameOfLife::GameOfLife(const GameOfLife & other) : rows(other.rows), cols(other.cols), board(nullptr)  {
-    // TODO
+    // Delete the old board
+    deleteBoard();
+
+    // Deep copy the board
+    board = new bool*[rows];
+    for(int i = 0; i < rows; i++){
+        board[i] = new bool[cols];
+        for(int j = 0; j < cols; j++){
+            board[i][j] = other.board[i][j];
+        }
+    }
 }
 
 GameOfLife& GameOfLife::operator=(const GameOfLife & other){
-    // TODO
+    if(this != &other){
+        // Delete the old board
+        deleteBoard();
+
+        // Deep copy the board
+        other.rows;
+        other.cols;
+        board = new bool*[rows];
+        for(int i = 0; i < rows; i++){
+            board[i] = new bool[cols];
+            for(int j = 0; j < cols; j++){
+                board[i][j] = other.board[i][j];
+            }
+        }
+    }
     return *this;
 }
 

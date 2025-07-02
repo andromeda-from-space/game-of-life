@@ -5,13 +5,7 @@
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 #include <string>
-
-// Stretch goals:
-// TODO - pass strings by const reference?
-// TODO - deep copying?
-// TODO - shared pointers?
-// TODO - more sophisticated text handling?
-// TODO - refactor repeated code
+#include <exception>
 
 // Default Screen Sizes
 const int DEFAULT_SCREEN_WIDTH = 640;
@@ -20,6 +14,58 @@ const int DEFAULT_SCREEN_HEIGHT = 480;
 // Frame rate cap variables
 const int DEFAULT_SCREEN_FPS = 60;
 const int DEFAULT_SCREEN_TICKS_PER_FRAME = 1000 / DEFAULT_SCREEN_FPS;
+
+// Exception for failing to initialize SDL Subsystems
+class InitFailException : public virtual std::exception{
+    public:
+        // Constructor
+        explicit InitFailException(const std::string msg);
+        explicit InitFailException(const char* msg);
+        // what() - for exception messaging
+        const char* what() const noexcept override;
+    private:
+        // The exception message;
+        std::string message;
+};
+
+// Exception for failing to load media
+class LoadFailException : public virtual std::exception {
+    public:
+        // Constructors
+        explicit LoadFailException(const std::string msg);
+        explicit LoadFailException(const char* msg);
+        // what() - for exception messaging
+        const char* what() const noexcept override;
+    private:
+        // The exception message;
+        std::string message;
+};
+
+// Exception intended to be thrown when the renderer fails
+class RenderFailException : public virtual std::exception {
+    public:
+        // Constructors
+        explicit RenderFailException(const std::string msg);
+        explicit RenderFailException(const char* msg);
+        // what() - for exception messaging
+        const char* what() const noexcept override;
+    private:
+        // The exception message;
+        std::string message;
+};
+
+// Catch all for less specific SDL Errors - like being unable to create the window
+class SDLFailException : public virtual std::exception {
+    public:
+        // Constructors
+        explicit SDLFailException(const std::string msg);
+        explicit SDLFailException(const char* msg);
+        // what() - for exception messaging
+        const char* what() const noexcept override;
+    private:
+        // The exception message;
+        std::string message;
+};
 
 class SDLWindowWrapper {
     public:
@@ -54,6 +100,7 @@ class SDLWindowWrapper {
         static int TTF_INIT_COUNT;
         // Count of the instances of the class using the SDL_mixer subsystem
         static int MIX_INIT_COUNT;
+        // Note - shared pointer?
 
         //---------- PRIVATE MEMBERS ----------
         // Width of the screen
@@ -120,6 +167,9 @@ class SDLTextureWrapper {
         // Image size
         int width;
         int height;
+        // Flag to prevent deleting a texture twice
+        bool ownTexture;
+        // Note - shared pointer?
 };
 
 /*
@@ -183,7 +233,8 @@ class SDLPixelGridRenderer {
         SDLPixelGridRenderer();
         SDLPixelGridRenderer(std::string title, int rows, int cols);
         SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color gridColor);
-        SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color falseColor, SDL_Color gridColor, SDL_Color trueColor);
+        SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color gridColor, SDL_Color falseColor, SDL_Color trueColor);
+        SDLPixelGridRenderer(std::string title, int rows, int cols, SDL_Color gridColor, SDL_Color falseColor, SDL_Color trueColor, int pixelSize);
         SDLPixelGridRenderer(const SDLPixelGridRenderer& other);
         SDLPixelGridRenderer& operator=(const SDLPixelGridRenderer& other);
         ~SDLPixelGridRenderer();
@@ -204,6 +255,8 @@ class SDLPixelGridRenderer {
         void setGridLineColor(SDL_Color newColor);
         void setTrueColor(SDL_Color newColor);
     private:
+        // Title for the window
+        std::string title;
         // Number of rows in the pixel grid
         int rows;
         // Number of columns in the pixel grid
@@ -218,16 +271,19 @@ class SDLPixelGridRenderer {
         SDLTimer fpsTimer;
         // Texture to hold the background image
         SDLTextureWrapper background;
-        // "Pixel" size
-        int pixelSize;
-        // Color of "false" in the boolean data
-        SDL_Color falseColor;
         // Color of the gridlines
         SDL_Color gridLineColor;
+        // Color of "false" in the boolean data
+        SDL_Color falseColor;
         // Color of "true" in the boolean data
         SDL_Color trueColor;
+        // "Pixel" size
+        int pixelSize;
 
         //---------- PRIVATE UTILITIES ----------
+        // Does the initialization
+        void init();
+        // Draws the background for repeated rendering
         void drawBackground();
 };
 

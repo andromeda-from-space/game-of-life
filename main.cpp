@@ -555,33 +555,30 @@ void test_cellularAutomata1DGeneral(){
 }
 
 void test_WrapInt(){
-    WrapInt wrapInt = WrapInt();
-    wrapInt.max = 7;
+    int max = 7;
+    WrapInt wrapInt = WrapInt(0, max);
 
-    wrapInt.currVal = 5;
-    wrapInt.currVal += 5;
-    wrapInt.wrapVal();
-    cout << "Actual: " << wrapInt.currVal  << " Expected: 3\n";
+    wrapInt.setVal(5);
+    wrapInt += 5;
+    cout << "Actual: " << wrapInt.getVal()  << " Expected: 3\n";
     
-    wrapInt.currVal = 3;
-    wrapInt.currVal -= 5;
-    wrapInt.wrapVal();
-    cout << "Actual: " << wrapInt.currVal << " Expected: 5\n";
+    wrapInt.setVal(3);
+    wrapInt -= 5;
+    cout << "Actual: " << wrapInt.getVal()<< " Expected: 5\n";
     
-    wrapInt.currVal = 3;
-    wrapInt.currVal += wrapInt.max;
+    wrapInt.setVal(3);
+    wrapInt += max;
     wrapInt.wrapVal();
-    cout << "Actual: " << wrapInt.currVal << " Expected: 3\n";
+    cout << "Actual: " << wrapInt.getVal()<< " Expected: 3\n";
 
-    wrapInt.currVal = 5;
-    wrapInt.currVal -= wrapInt.max;
+    wrapInt.setVal(5);
+    wrapInt -= max;
     wrapInt.wrapVal();
-    cout << "Actual: " << wrapInt.currVal << " Expected: 5\n";
+    cout << "Actual: " << wrapInt.getVal() << " Expected: 5\n";
 
-    wrapInt.currVal = 5;
-    wrapInt.currVal -= 2 * wrapInt.max;
-    wrapInt.wrapVal();
-    cout << "Actual: " << wrapInt.currVal << " Expected: 5\n";
+    wrapInt.setVal(5);
+    wrapInt -= 2 * max;
+    cout << "Actual: " << wrapInt.getVal() << " Expected: 5\n";
 }
 
 //---------- COMMAND LINE ARGUMENT FUNCTIONS ----------
@@ -652,7 +649,7 @@ void testOptions(int testFlag){
 // Run the code to generate the data desired
 void runOptions(int runFlag){
     cerr << "Not implemented\n";
-    // TODO
+    // TODO - implement experiments
     switch(runFlag){
         case 0:
             break;

@@ -7,3 +7,5 @@ game-of-life
 video
 # ignore vs code files
 .vscode
+# ignore TODO list
+TODO.md
