@@ -88,7 +88,6 @@ class MajoritySolverGA : public GeneticAlgorithm {
 };
 
 // Super basic integer that is meant to be positive and wrap around if it exceeds the maximum value
-// TODO - currently Hacky solution - operator overloading? 
 class WrapInt {
     public:
         //---------- CONSTRUCTORS ----------
@@ -107,6 +106,22 @@ class WrapInt {
         // Decrement
         WrapInt& operator--();
         WrapInt operator--(int dummy);
+        // Comparisons
+        friend bool operator==(const WrapInt& lhs, const WrapInt& rhs);
+        friend bool operator==(int lhs, const WrapInt& rhs);
+        friend bool operator==(const WrapInt& lhs, int rhs);
+        friend bool operator<(const WrapInt& lhs, const WrapInt& rhs);
+        friend bool operator<(int lhs, const WrapInt& rhs);
+        friend bool operator<(const WrapInt& lhs, int rhs);
+        friend bool operator>(const WrapInt& lhs, const WrapInt& rhs);
+        friend bool operator>(int lhs, const WrapInt& rhs);
+        friend bool operator>(const WrapInt& lhs, int rhs);
+        friend bool operator<=(const WrapInt& lhs, const WrapInt& rhs);
+        friend bool operator<=(int lhs, const WrapInt& rhs);
+        friend bool operator<=(const WrapInt& lhs, int rhs);
+        friend bool operator>=(const WrapInt& lhs, const WrapInt& rhs);
+        friend bool operator>=(int lhs, const WrapInt& rhs);
+        friend bool operator>=(const WrapInt& lhs, int rhs);
 
         //---------- UTILITIES ----------
         // Enforces the wrap around condition
@@ -115,7 +130,7 @@ class WrapInt {
         //---------- MUTATORS ----------
         void setVal(int newVal);
         void setMax(int newMax);
-        
+
         //---------- ACCESSORS ----------
         int getVal();
 

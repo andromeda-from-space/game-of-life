@@ -291,11 +291,71 @@ WrapInt WrapInt::operator++(int dummy){
 }
 
 WrapInt& WrapInt::operator--(){
-    currVal = currVal - 1 < 0 ? max - 1 : currVal - 1
+    currVal = currVal - 1 < 0 ? max - 1 : currVal - 1;
 }
 
 WrapInt WrapInt::operator--(int dummy){
     return WrapInt(currVal - 1 < 0 ? max - 1 : currVal - 1, max);
+}
+
+bool operator==(const WrapInt& lhs, const WrapInt& rhs){
+
+}
+
+bool operator==(int lhs, const WrapInt& rhs){
+
+}
+
+bool operator==(const WrapInt& lhs, int rhs){
+
+}
+
+bool operator<(const WrapInt& lhs, const WrapInt& rhs){
+
+}
+
+bool operator<(int lhs, const WrapInt& rhs){
+
+}
+
+bool operator<(const WrapInt& lhs, int rhs){
+
+}
+
+bool operator>(const WrapInt& lhs, const WrapInt& rhs){
+
+}
+
+bool operator>(int lhs, const WrapInt& rhs){
+
+}
+
+bool operator>(const WrapInt& lhs, int rhs){
+
+}
+
+bool operator<=(const WrapInt& lhs, const WrapInt& rhs){
+
+}
+
+bool operator<=(int lhs, const WrapInt& rhs){
+
+}
+
+bool operator<=(const WrapInt& lhs, int rhs){
+    
+}
+
+bool operator>=(const WrapInt& lhs, const WrapInt& rhs){
+    return lhs.currVal >= rhs.currVal;
+}
+
+bool operator>=(int lhs, const WrapInt& rhs){
+    return lhs >= rhs.currVal;
+}
+
+bool operator>=(const WrapInt& lhs, int rhs){
+    return lhs.currVal >= rhs;
 }
 
 //---------- UTILITIES ----------
