@@ -55,7 +55,7 @@ SDLWindowWrapper::SDLWindowWrapper(int width, int height, std::string title, boo
     init(title);
 }
 
-SDLWindowWrapper::SDLWindowWrapper(const SDLWindowWrapper & other) : screenWidth(other.screenWidth), screenHeight(other.screenHeight), window(nullptr), renderer(nullptr), useTTF(other.useTTF), useMixer(useMixer), fpsCap(other.fpsCap){
+SDLWindowWrapper::SDLWindowWrapper(const SDLWindowWrapper & other) : screenWidth(other.screenWidth), screenHeight(other.screenHeight), window(nullptr), renderer(nullptr), useTTF(other.useTTF), useMixer(other.useMixer), fpsCap(other.fpsCap){
     // Initialize and create the window
     std::stringstream temp;
     temp << SDL_GetWindowTitle(other.window) << " - new";
@@ -461,9 +461,9 @@ bool SDLTimer::isPaused(){
 //---------- SDLPixelGridRenderer ------------------------------------
 //--------------------------------------------------------------------
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
-SDLPixelGridRenderer::SDLPixelGridRenderer() : title("SDLPixelGridRenderer"), rows(-1), cols(-1), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(GRID_FALSE_COLOR), gridLineColor(GRID_LINES_COLOR), trueColor(GRID_TRUE_COLOR){}
+SDLPixelGridRenderer::SDLPixelGridRenderer() : title("SDLPixelGridRenderer"), rows(-1), cols(-1), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), gridLineColor(GRID_LINES_COLOR), falseColor(GRID_FALSE_COLOR), trueColor(GRID_TRUE_COLOR), pixelSize(GRID_PIXEL_SIZE) {}
 
-SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols) : title(title), rows(rows), cols(cols), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), pixelSize(GRID_PIXEL_SIZE), falseColor(GRID_FALSE_COLOR), gridLineColor(GRID_LINES_COLOR), trueColor(GRID_TRUE_COLOR) {
+SDLPixelGridRenderer::SDLPixelGridRenderer(std::string title, int rows, int cols) : title(title), rows(rows), cols(cols), ticksPerFrame(-1), window(nullptr), renderer(nullptr), fpsTimer(SDLTimer()), background(SDLTextureWrapper()), gridLineColor(GRID_LINES_COLOR), falseColor(GRID_FALSE_COLOR), trueColor(GRID_TRUE_COLOR), pixelSize(GRID_PIXEL_SIZE) {
     // Run initialization script
     init();
 }

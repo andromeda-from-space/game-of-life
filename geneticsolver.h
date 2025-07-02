@@ -28,6 +28,15 @@ Data Members:
 - totalGens - the number of generations to breed before considering the algorithm to be done
 */
 
+// Some default parameters - chosen with cellular automata in mind
+const int GA_DEFAULT_SIZEPOP = 100;
+const int GA_DEFAULT_SIZEMEMBER = 8;
+const int GA_DEFAULT_NUMACTIONS = 2;
+const char GA_DEFAULT_ACTIONS[] = {'0', '1'};
+const int GA_DEFAULT_CROSSOVERS = 1;
+const int GA_DEFAULT_MUTATION_RATE = 0.1;
+const int GA_DEFAULT_TOTALGENS = 100;
+
 class GeneticAlgorithm{
     public:
         //---------- CONSTRUCTORS & DESTRUCTOR ----------

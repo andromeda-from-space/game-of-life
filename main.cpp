@@ -581,6 +581,14 @@ void test_WrapInt(){
     cout << "Actual: " << wrapInt.getVal() << " Expected: 5\n";
 }
 
+void experiment0_CellularAutomata(){
+    // TODO
+}
+
+void experiment1_GameOfLife(){
+    // TODO
+}
+
 //---------- COMMAND LINE ARGUMENT FUNCTIONS ----------
 // Prints the help menu
 void printHelpMenu(){
@@ -601,7 +609,8 @@ void printHelpMenu(){
     cerr << "\t\t10 - test the WrapInt Class.\n";
     // Run code
     cerr << "\t-r # - experiment mode with options:\n";
-    // TODO - update the help menu
+    cerr << "\t\t0 - trains cellular automata to solve the majority problem.\n";
+    cerr << "\t\t1 - trains organisms using one of the various fitness functions.\n";
 }
 
 // Processes the testing
@@ -652,8 +661,10 @@ void runOptions(int runFlag){
     // TODO - implement experiments
     switch(runFlag){
         case 0:
+            experiment0_CellularAutomata();
             break;
         case 1:
+            experiment1_GameOfLife();
             break;
         default:
             cerr << "Invalid experiment code. See help menu (-h)\n";
