@@ -13,14 +13,14 @@ const char CA_FALSE = '0';
 const char CA_TRUE = '1';
 
 // Some graphical constants
-// Pixel size width for the tiles
-const int CA_PIXEL_SIZE = 5;
-// Color for the tiles that are labeled true
-const SDL_Color CA_FALSE_COLOR = {255, 255, 255, 255};
 // Color for the grid line
 const SDL_Color CA_GRID_LINES = {150, 150, 150, 255};
+// Color for the tiles that are labeled true
+const SDL_Color CA_FALSE_COLOR = {0, 0, 0, 255};
 // Color for the tiles that are labeled false
-const SDL_Color CA_TRUE_COLOR = {0, 0, 0, 255};
+const SDL_Color CA_TRUE_COLOR = {255, 255, 255, 255};
+// Pixel size width for the tiles
+const int CA_PIXEL_SIZE = 5;
 
 // Uses the classic 1D cellular automata definition where the bit and it's immediate neighbors determines it's value at the next step
 // Uses a toroidal (i.e. wrap around) domain for the boundary values of the bit string
@@ -63,7 +63,7 @@ class MajoritySolverGA : public GeneticAlgorithm {
     public:
         //---------- CONSTRUCTORS & DESTRUCTOR ----------
         MajoritySolverGA();
-        MajoritySolverGA(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens, int numFitnessTests, int domainSize, int maxSteps);
+        MajoritySolverGA(int sizePopulation, int crossovers, double mutationRate, int numFitnessTests, int domainSize, int maxSteps);
         MajoritySolverGA(const MajoritySolverGA & other);
         MajoritySolverGA& operator=(const MajoritySolverGA & other);
         ~MajoritySolverGA();
@@ -74,8 +74,9 @@ class MajoritySolverGA : public GeneticAlgorithm {
 
         //---------- UTILITIES ----------
         // Creates an animation of the given member
-        void animateMember(int member);
+        void visualizeMember(int member);
     private:
+        static char CA_ACTIONS[2];
         // Cellular Automata framework for evaluating the fitness
         CellularAutomata1D* currAutomata;
         // Number of random strings to test the member on when evaluating the fitness

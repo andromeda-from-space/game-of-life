@@ -10,6 +10,9 @@
 //-------------------------------------------------------------------------------------
 //---------- CellularAutomata1D -------------------------------------------------------
 //-------------------------------------------------------------------------------------
+// Initialize static memory
+char MajoritySolverGA::CA_ACTIONS[2] = {CA_FALSE, CA_TRUE};
+
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
 CellularAutomata1D::CellularAutomata1D() : rules(nullptr){
     // Seed the rng
@@ -170,7 +173,7 @@ void CellularAutomata1D::snapShot(bool* start, int domainSize, int numSteps){
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
 MajoritySolverGA::MajoritySolverGA() : GeneticAlgorithm(), currAutomata(nullptr), numFitnessTests(-1), domainSize(-1), maxSteps(-1) {}
 
-MajoritySolverGA::MajoritySolverGA(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens, int numFitnessTests, int domainSize, int maxSteps) : GeneticAlgorithm(sizePopulation, sizeMembers, numActions, actions,crossovers, mutationRate, totalGens), currAutomata(nullptr), numFitnessTests(numFitnessTests), domainSize(domainSize), maxSteps(maxSteps) {}
+MajoritySolverGA::MajoritySolverGA(int sizePopulation, int crossovers, double mutationRate, int numFitnessTests, int domainSize, int maxSteps) : GeneticAlgorithm(sizePopulation, 8, 2, CA_ACTIONS, crossovers, mutationRate), currAutomata(nullptr), numFitnessTests(numFitnessTests), domainSize(domainSize), maxSteps(maxSteps) {}
 
 MajoritySolverGA::MajoritySolverGA(const MajoritySolverGA & other) : GeneticAlgorithm(other), currAutomata(nullptr), numFitnessTests(other.numFitnessTests), domainSize(other.domainSize), maxSteps(other.maxSteps) {}
 
@@ -267,7 +270,7 @@ double MajoritySolverGA::fitness(int member){
 }
 
 //---------- UTILITIES ----------
-void MajoritySolverGA::animateMember(int member){
+void MajoritySolverGA::visualizeMember(int member){
     currAutomata = new CellularAutomata1D(population[member]);
     
     // Make a random start
@@ -287,7 +290,7 @@ void MajoritySolverGA::animateMember(int member){
     std::stringstream sstream;
     sstream << "Game of Life GA, member = " << member;
     std::string title = sstream.str();
-    SDLPixelGridRenderer animation = SDLPixelGridRenderer(title, maxSteps + 1, domainSize, {150, 150, 150, 255}, {0, 0, 0, 255}, {255, 255, 255, 255}, 5);
+    SDLPixelGridRenderer animation = SDLPixelGridRenderer(title, maxSteps + 1, domainSize, CA_GRID_LINES, CA_FALSE_COLOR, CA_TRUE_COLOR, CA_PIXEL_SIZE);
     animation.drawBoolGrid(data, false, "");
 
     // Cleanup

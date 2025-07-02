@@ -35,13 +35,12 @@ const int GA_DEFAULT_NUMACTIONS = 2;
 const char GA_DEFAULT_ACTIONS[] = {'0', '1'};
 const int GA_DEFAULT_CROSSOVERS = 1;
 const int GA_DEFAULT_MUTATION_RATE = 0.1;
-const int GA_DEFAULT_TOTALGENS = 100;
 
 class GeneticAlgorithm{
     public:
         //---------- CONSTRUCTORS & DESTRUCTOR ----------
         GeneticAlgorithm();
-        GeneticAlgorithm(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens);
+        GeneticAlgorithm(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate);
         GeneticAlgorithm(const GeneticAlgorithm& otherGA);
         GeneticAlgorithm& operator=(const GeneticAlgorithm& otherGA);
         virtual ~GeneticAlgorithm();

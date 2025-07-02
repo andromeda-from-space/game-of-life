@@ -582,7 +582,33 @@ void test_WrapInt(){
 }
 
 void experiment0_CellularAutomata(){
-    // TODO
+    // Values for the genetic solver
+    // The size of the population
+    int sizePopulation = 100;
+    // The number of crossovers
+    int crossovers = 1;
+    // The mutation rate
+    double mutationRate = 0.1;
+    // The number of attempts to try and get the majority
+    int numFitnessTests = 5;
+    // The domain size
+    int domainSize = 50;
+    // Maximum number of steps to attempt to blackout the whole domain
+    int maxSteps = 200;
+    // Number of generations to train
+    int numGens = 100;
+
+    // Create the solver
+    MajoritySolverGA solver = MajoritySolverGA(sizePopulation, crossovers, mutationRate, numFitnessTests, domainSize, maxSteps);
+
+    // Run the solver
+    solver.train(numGens);
+
+    // Get the most fit member
+    int mostFit = solver.getMostFit(false);
+
+    // See what it can make
+    solver.visualizeMember(mostFit);
 }
 
 void experiment1_GameOfLife(){
@@ -657,8 +683,6 @@ void testOptions(int testFlag){
 
 // Run the code to generate the data desired
 void runOptions(int runFlag){
-    cerr << "Not implemented\n";
-    // TODO - implement experiments
     switch(runFlag){
         case 0:
             experiment0_CellularAutomata();

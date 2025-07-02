@@ -4,7 +4,7 @@
 #include "rng.h"
 
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
-GeneticAlgorithm::GeneticAlgorithm() : sizePopulation(GA_DEFAULT_SIZEPOP), sizeMembers(GA_DEFAULT_SIZEMEMBER), population(nullptr), numActions(GA_DEFAULT_NUMACTIONS), actions(nullptr), fitnessVals(nullptr), totalFitness(0), crossovers(GA_DEFAULT_CROSSOVERS), mutationRate(GA_DEFAULT_MUTATION_RATE), totalGens(GA_DEFAULT_TOTALGENS) {
+GeneticAlgorithm::GeneticAlgorithm() : sizePopulation(GA_DEFAULT_SIZEPOP), sizeMembers(GA_DEFAULT_SIZEMEMBER), population(nullptr), numActions(GA_DEFAULT_NUMACTIONS), actions(nullptr), fitnessVals(nullptr), totalFitness(0), crossovers(GA_DEFAULT_CROSSOVERS), mutationRate(GA_DEFAULT_MUTATION_RATE), totalGens(0) {
     // Copy actions
     actions = new char[numActions];
     for(int i = 0; i < numActions; i++){
@@ -21,7 +21,7 @@ GeneticAlgorithm::GeneticAlgorithm() : sizePopulation(GA_DEFAULT_SIZEPOP), sizeM
     initPop();
 }
 
-GeneticAlgorithm::GeneticAlgorithm(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens) : sizePopulation(sizePopulation), sizeMembers(sizeMembers), population(nullptr), numActions(numActions), actions(nullptr), fitnessVals(nullptr), crossovers(crossovers), mutationRate(mutationRate), totalGens(totalGens) {
+GeneticAlgorithm::GeneticAlgorithm(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate) : sizePopulation(sizePopulation), sizeMembers(sizeMembers), population(nullptr), numActions(numActions), actions(nullptr), fitnessVals(nullptr), crossovers(crossovers), mutationRate(mutationRate), totalGens(0) {
     // Deep copy the actions
     this->actions = new char[numActions];
     for(int i = 0; i < numActions; i++){

@@ -394,7 +394,7 @@ void GameOfLife::deleteBoard(){
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
 GameOfLifeGA::GameOfLifeGA() : GeneticAlgorithm(), GameOfLife(), fitnessFunc(GoLFitnessFunction::FinalStepTiles), maxSteps(-1), orgRows(-1), orgCols(-1) {}
 
-GameOfLifeGA::GameOfLifeGA(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens, int rows, int cols, GoLFitnessFunction fitnessFunc, int maxSteps, int orgRows, int orgCols) : GeneticAlgorithm(sizePopulation, sizeMembers, numActions, actions,crossovers, mutationRate, totalGens), GameOfLife(rows, cols), fitnessFunc(fitnessFunc), maxSteps(maxSteps), orgRows(orgRows), orgCols(orgCols){}
+GameOfLifeGA::GameOfLifeGA(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens, int rows, int cols, GoLFitnessFunction fitnessFunc, int maxSteps, int orgRows, int orgCols) : GeneticAlgorithm(sizePopulation, sizeMembers, numActions, actions,crossovers, mutationRate), GameOfLife(rows, cols), fitnessFunc(fitnessFunc), maxSteps(maxSteps), orgRows(orgRows), orgCols(orgCols){}
 
 GameOfLifeGA::GameOfLifeGA(const GameOfLifeGA & other) : GeneticAlgorithm(other), GameOfLife(other), fitnessFunc(other.fitnessFunc), maxSteps(other.maxSteps), orgRows(other.orgRows), orgCols(other.orgCols) {}
 
