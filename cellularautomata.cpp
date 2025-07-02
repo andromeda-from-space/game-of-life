@@ -5,7 +5,9 @@
 #include "rng.h"
 #include "sdl-basics.h"
 
-//---------------------------------------- CellularAutomata1D ----------------------------------------
+//-------------------------------------------------------------------------------------
+//---------- CellularAutomata1D -------------------------------------------------------
+//-------------------------------------------------------------------------------------
 //---------- CONSTRUCTORS & DESTRUCTOR ----------
 CellularAutomata1D::CellularAutomata1D() : rules(nullptr){
     // Randomly select rules based on coin flip
@@ -147,11 +149,49 @@ void CellularAutomata1D::snapShot(bool* start, int domainSize, int numSteps){
     pixelRenderer.drawBoolGrid(data, false, "");
 }
 
-//---------------------------------------- MajoritySolverGA ----------------------------------------
+//-------------------------------------------------------------------------------------
+//---------- MajoritySolverGA ---------------------------------------------------------
+//-------------------------------------------------------------------------------------
+//---------- CONSTRUCTORS & DESTRUCTOR ----------
+MajoritySolverGA::MajoritySolverGA() : GeneticAlgorithm(), currAutomata(nullptr), numFitnessTests(-1), domainSize(-1), maxSteps(-1) {}
+
+MajoritySolverGA::MajoritySolverGA(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens, int numFitnessTests, int domainSize, int maxSteps) : GeneticAlgorithm(sizePopulation, sizeMembers, numActions, actions,crossovers, mutationRate, totalGens), currAutomata(nullptr), numFitnessTests(numFitnessTests), domainSize(domainSize), maxSteps(maxSteps) {}
+
+MajoritySolverGA::MajoritySolverGA(const MajoritySolverGA & other) : GeneticAlgorithm(other), currAutomata(nullptr), numFitnessTests(other.numFitnessTests), domainSize(other.domainSize), maxSteps(other.maxSteps) {}
+
+MajoritySolverGA& MajoritySolverGA::operator=(const MajoritySolverGA & other) {
+    if(this != &other){
+        // Set genetic algorithm variables
+        this->GeneticAlgorithm::operator=(other);
+
+        // Clean up old cellular automata placeholder
+        if(currAutomata){
+            delete(currAutomata);
+            currAutomata = nullptr;
+        }
+
+        // Set other variables
+        numFitnessTests = other.numFitnessTests;
+        domainSize = other.domainSize;
+        maxSteps = other.maxSteps;
+    }
+    return *this;
+}
+
+MajoritySolverGA::~MajoritySolverGA() {
+    if(currAutomata){
+        delete(currAutomata);
+        currAutomata = nullptr;
+    }
+};
+
 //---------- GENETIC ALGORITHM FUNCTIONS ----------
 double MajoritySolverGA::fitness(int member){
-    // Translate the member string into rules for the Cellular Automata 1D
-    currAutomata.setRules(population[member]);
+    if(!currAutomata){
+        currAutomata = new CellularAutomata1D(population[member]);
+    } else {
+        currAutomata->setRules(population[member]);
+    }
 
     // Randomly generate bit strings and evaluate
     double fitness = (double) numFitnessTests;
@@ -183,7 +223,7 @@ double MajoritySolverGA::fitness(int member){
         majority = totalTrue >= domainSize / 2 ? true : false;
 
         // Apply the rules
-        eval = currAutomata.majority(start, domainSize, maxSteps);
+        eval = currAutomata->majority(start, domainSize, maxSteps);
 
         // Calculate the fitness for this trial
         if(eval >= 0){
@@ -216,9 +256,9 @@ void MajoritySolverGA::animateMember(int member){
     // TODO
 }
 
-//-----------------------------------------------------------------------------------------------------------
-//---------------------------------------- WrapInt ----------------------------------------------------------
-//-----------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//---------- WrapInt ----------------------------------------------------------
+//-----------------------------------------------------------------------------
 //---------- CONSTRUCTORS ----------
 WrapInt::WrapInt() : currVal(0), max(0){}
 

@@ -64,7 +64,7 @@ class MajoritySolverGA : public GeneticAlgorithm {
     public:
         //---------- CONSTRUCTORS & DESTRUCTOR ----------
         MajoritySolverGA();
-        MajoritySolverGA(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens);
+        MajoritySolverGA(int sizePopulation, int sizeMembers, int numActions, char* actions, int crossovers, double mutationRate, int totalGens, int numFitnessTests, int domainSize, int maxSteps);
         MajoritySolverGA(const MajoritySolverGA & other);
         MajoritySolverGA& operator=(const MajoritySolverGA & other);
         ~MajoritySolverGA();
@@ -99,6 +99,10 @@ class WrapInt {
         int max;
 
         //---------- OPERATIONS ----------
+        WrapInt& operator+=(int a);
+        WrapInt& operator-=(int b);
+        WrapInt& operator++();
+        WrapInt& operator--();
         void wrapVal();
 };
 

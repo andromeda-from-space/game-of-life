@@ -2,6 +2,85 @@
 
 using namespace std;
 
+//---------- OPERATOR OVERLOADING TESTING ----------
+// Note some of these operators need to be commened out so that there isn't ambiguity
+class OperatorTesting {
+    public:
+        OperatorTesting();
+        OperatorTesting(int val);
+        OperatorTesting& operator=(const OperatorTesting& other);
+
+        /*
+        //OperatorTesting operator+(const int rhs) const;
+        friend OperatorTesting operator+(const OperatorTesting& lhs, const int rhs);
+        friend OperatorTesting operator+(const int lhs, const OperatorTesting& rhs);
+        */
+
+        //OperatorTesting operator+(const OperatorTesting& rhs) const;
+        friend OperatorTesting operator+(const OperatorTesting& lhs, const OperatorTesting& rhs);
+
+        OperatorTesting& operator++(); // Prefix: ++OperatorTesting
+        OperatorTesting operator++( int dummy); // Postfix: OperatorTesting++
+    private:
+        int val;
+};
+
+OperatorTesting::OperatorTesting() : val(0) {
+    cout << "OperatorTesting: OperatorTesting() called.\n";
+}
+
+OperatorTesting::OperatorTesting(int val) : val(val) {
+    cout << "OperatorTesting: OperatorTesting(int) called.\n";
+}
+
+OperatorTesting& OperatorTesting::operator=(const OperatorTesting& other){
+    if(this != &other){
+        cout << "OperatorTesting: Assignment Operator called.\n";
+        val = other.val;
+    }
+    return *this;
+}
+
+/*
+OperatorTesting OperatorTesting::operator+(const int rhs) const{
+    cout << "OperatorTesting.operator+(int) called.\n";
+    return OperatorTesting(val + rhs);
+}
+
+
+OperatorTesting operator+(const OperatorTesting& lhs, const int rhs){
+    cout << "friend operator+(OperatorTesting, int) called.\n";
+    return OperatorTesting(lhs.val + rhs);
+}
+
+OperatorTesting operator+(const int lhs, const OperatorTesting& rhs){
+    cout << "friend operator+(int, OperatorTesting) called.\n";
+    return OperatorTesting(lhs + rhs.val);
+}
+*/
+
+/*
+OperatorTesting OperatorTesting::operator+(const OperatorTesting& rhs) const{
+    cout << "OperatorTesting.operator+(OperatorTesting&) called.\n";
+    return OperatorTesting(val + rhs.val);
+}
+*/
+
+OperatorTesting operator+(const OperatorTesting& lhs, const OperatorTesting& rhs){
+    cout << "friend operator+(OperatorTesting&, OperatorTesting&) called.\n";
+    return OperatorTesting(lhs.val + rhs.val);
+}
+
+OperatorTesting& OperatorTesting::operator++(){
+    this->val++;
+    return *this;
+}
+
+OperatorTesting OperatorTesting::operator++(int dummy){
+    return OperatorTesting(val + 1);
+}
+
+//---------- INHERITANCE TESTING ----------
 class Base1 {
     public:
         Base1();
@@ -191,6 +270,8 @@ int main(int argc, char* argv[]){
     cout << "Actual: " << val << " Expected: 5\n";
     */
 
+    /*
+    // Inheritance testing
     cout << "--------------------\n";
     cout << "Constructor test\n";
     cout << "--------------------\n";
@@ -227,5 +308,36 @@ int main(int argc, char* argv[]){
     delete(base2Ptr);
     base2Ptr = nullptr;
     cout << "--------------------\n";
+    */
+
+    // Operator Overloading testing
+    OperatorTesting a = OperatorTesting(3);
+    OperatorTesting b = OperatorTesting(4);
+
+    cout << "--------------------\n";
+    cout << "Testing + operator between two of the same class\n";
+    cout << "--------------------\n";
+    OperatorTesting c = a + b;
+    cout << "--------------------\n";
+
+    cout << "\n--------------------\n";
+    cout << "Testing + operator between two different classes\n";
+    cout << "--------------------\n";
+    int d = 5;
+    a + d;
+    d + a;
+    cout << "--------------------\n";
+
+
+    cout << "\n--------------------\n";
+    cout << "Testing increment operator:\n";
+    cout << "--------------------\n";
+    ++a;
+    a++;
+    cout << "--------------------\n";
+
+    // Note the count of copies are the same if all operators are implemented above, whether a friend or non-friend function is used
+    // If not, the integer is auto-upcast to an OperatorTesting using OperatorTesting(int) and then the addition is done
+
     return 0;
 }
