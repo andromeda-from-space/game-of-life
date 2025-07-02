@@ -644,7 +644,7 @@ void test_majority(){
 void experiment0_CellularAutomata(){
     // Values for the genetic solver
     // The size of the population
-    int sizePopulation = 10;
+    int sizePopulation = 100;
     // The number of crossovers
     int crossovers = 1;
     // The mutation rate
@@ -652,11 +652,11 @@ void experiment0_CellularAutomata(){
     // The number of attempts to try and get the majority
     int numFitnessTests = 5;
     // The domain size
-    int domainSize = 8;
+    int domainSize = 32;
     // Maximum number of steps to attempt to blackout the whole domain
-    int maxSteps = 200;
+    int maxSteps = 100;
     // Number of generations to train
-    int numGens = 100;
+    int numGens = 1;
 
     // Create the solver
     MajoritySolverGA solver = MajoritySolverGA(sizePopulation, crossovers, mutationRate, numFitnessTests, domainSize, maxSteps);

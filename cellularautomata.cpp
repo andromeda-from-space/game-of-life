@@ -205,6 +205,7 @@ MajoritySolverGA::~MajoritySolverGA() {
 
 //---------- GENETIC ALGORITHM FUNCTIONS ----------
 double MajoritySolverGA::fitness(int member){
+    // Setup the cellular automata
     if(!currAutomata){
         currAutomata = new CellularAutomata1D(population[member]);
     } else {
@@ -212,7 +213,7 @@ double MajoritySolverGA::fitness(int member){
     }
 
     // Randomly generate bit strings and evaluate
-    double fitness = (double) numFitnessTests;
+    double fitness = 0.0;
     // The bit string to test the cellular automata on
     bool* start = new bool[domainSize];
     // Count of initial trueValues
@@ -236,6 +237,7 @@ double MajoritySolverGA::fitness(int member){
                 start[j] = false;
             }
         }
+
         // Evaluate which is the majority
         majorityVal = totalTrue >= domainSize / 2 ? true : false;
 

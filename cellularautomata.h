@@ -75,6 +75,7 @@ class MajoritySolverGA : public GeneticAlgorithm {
         //---------- UTILITIES ----------
         // Creates an animation of the given member
         void visualizeMember(int member);
+
     private:
         static char CA_ACTIONS[2];
         // Cellular Automata framework for evaluating the fitness
